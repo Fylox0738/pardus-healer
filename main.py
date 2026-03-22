@@ -11,7 +11,7 @@ from gi.repository import Gtk, Gdk, GLib, GdkPixbuf, Pango
 # ──────────────────────────────────────────────
 # CSS  (Açık Mod — varsayılan)
 # ──────────────────────────────────────────────
-CSS_LIGHT = b"""
+CSS_LIGHT = """
 /* ---- Genel ---- */
 window, .main-area {
     background-color: #f4f6f9;
@@ -159,7 +159,7 @@ window, .main-area {
 }
 """
 
-CSS_DARK = b"""
+CSS_DARK = """
 /* ---- Genel (Koyu) ---- */
 window, .main-area {
     background-color: #0f172a;
@@ -557,8 +557,8 @@ class HealerApp(Gtk.Window):
         self.on_refresh_all(None)
 
     # ───────── CSS ─────────
-    def _apply_css(self, css_bytes):
-        self.css_provider.load_from_data(css_bytes)
+    def _apply_css(self, css_text):
+        self.css_provider.load_from_data(css_text.encode('utf-8'))
         Gtk.StyleContext.add_provider_for_screen(
             Gdk.Screen.get_default(), self.css_provider,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
