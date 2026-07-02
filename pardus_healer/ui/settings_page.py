@@ -17,8 +17,11 @@ class SettingsPage(Gtk.Box):
         self,
         dark_mode: bool,
         auto_interval: int,
+        advisor_mode: str,
+        ollama_available: bool,
         on_dark_toggle: Callable[[bool], None],
         on_interval_change: Callable[[int], None],
+        on_advisor_change: Callable[[str], None],
     ):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=16)
         self.set_margin_start(32)
@@ -26,6 +29,7 @@ class SettingsPage(Gtk.Box):
         self.set_margin_top(24)
         self._on_dark_toggle = on_dark_toggle
         self._on_interval_change = on_interval_change
+        self._on_advisor_change = on_advisor_change
 
         title = Gtk.Label(label="Ayarlar")
         title.set_halign(Gtk.Align.START)
@@ -75,6 +79,45 @@ class SettingsPage(Gtk.Box):
 
         self.pack_start(Gtk.Separator(), False, False, 6)
 
+        # ── Akıllı öneri motoru ──
+        sec3 = Gtk.Label(label="Akıllı Öneri Motoru")
+        sec3.set_halign(Gtk.Align.START)
+        sec3.get_style_context().add_class("settings-section-title")
+        self.pack_start(sec3, False, False, 0)
+
+        adv_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        adv_lbl = Gtk.Label(label="Değerlendirme Motoru")
+        adv_lbl.get_style_context().add_class("settings-label")
+        adv_row.pack_start(adv_lbl, False, False, 0)
+        self.advisor_combo = Gtk.ComboBoxText()
+        self.advisor_combo.append("rule", "Kural Tabanlı (önerilen, hızlı)")
+        self.advisor_combo.append("ollama", "Yerel Yapay Zekâ (Ollama)")
+        self.advisor_combo.set_active_id(
+            advisor_mode if advisor_mode in ("rule", "ollama") else "rule")
+        self.advisor_combo.connect("changed", self._advisor_changed)
+        adv_row.pack_start(self.advisor_combo, False, False, 0)
+        self.pack_start(adv_row, False, False, 0)
+
+        note = (
+            "Kural Tabanlı motor internet ve güçlü donanım gerektirmez; her "
+            "makinede (akıllı tahtalar dâhil) anında çalışır.\n"
+            "Yerel Yapay Zekâ, cihazda kurulu Ollama ile daha doğal açıklamalar "
+            "üretir; yalnızca gücü yeten makinelerde önerilir.\n"
+        )
+        note += (
+            "Durum: Ollama algılandı ✓" if ollama_available
+            else "Durum: Ollama bu cihazda bulunamadı — seçilse bile otomatik "
+            "olarak Kural Tabanlı motora düşülür."
+        )
+        adv_note = Gtk.Label(label=note)
+        adv_note.set_halign(Gtk.Align.START)
+        adv_note.set_xalign(0.0)
+        adv_note.set_line_wrap(True)
+        adv_note.get_style_context().add_class("settings-label")
+        self.pack_start(adv_note, False, False, 0)
+
+        self.pack_start(Gtk.Separator(), False, False, 6)
+
         # ── Hakkında ──
         sec3 = Gtk.Label(label="Hakkında")
         sec3.set_halign(Gtk.Align.START)
@@ -100,3 +143,8 @@ class SettingsPage(Gtk.Box):
         active = combo.get_active_id()
         if active is not None:
             self._on_interval_change(int(active))
+
+    def _advisor_changed(self, combo):
+        active = combo.get_active_id()
+        if active is not None:
+            self._on_advisor_change(active)

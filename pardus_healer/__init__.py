@@ -7,5 +7,5 @@ Modüler mimari:
     ui/      → GTK3 arayüz katmanı
 """
 
-__version__ = "3.1.0"
+__version__ = "3.2.0"
 __app_name__ = "Pardus Healer"

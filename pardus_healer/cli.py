@@ -14,6 +14,7 @@ import os
 import sys
 
 from .core import notify, sysinfo
+from .core.advisor import RuleAdvisor
 from .core.engine import DiagnosisEngine
 from .core.history import History
 from .core.models import Status
@@ -134,6 +135,11 @@ def _print_full(report, hist, use_color: bool) -> None:
         print(f"  TREND        : {spark}")
     print(line)
 
+    # değerlendirme (kural tabanlı — hızlı, güç gerektirmez)
+    print("\n💬 DEĞERLENDİRME")
+    for chunk in _wrap(RuleAdvisor().summarize(report), 76):
+        print(f"  {chunk}")
+
     # içgörüler
     if report.insights:
         print("\n🧠 ÖNCELİKLİ İÇGÖRÜLER")
@@ -149,6 +155,12 @@ def _print_full(report, hist, use_color: bool) -> None:
         c = _STATUS_COLOR[r.status]
         icon = _c(f"{r.status.label_tr:10}", c, use_color)
         print(f"  {icon} {r.title:30} {r.summary}")
+
+
+def _wrap(text: str, width: int) -> list[str]:
+    """Metni kelime sınırlarında satırlara böler (terminal için)."""
+    import textwrap
+    return textwrap.wrap(text, width=width) or [""]
 
 
 def _sparkline(values: list[int]) -> str:

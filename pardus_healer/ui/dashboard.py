@@ -93,6 +93,26 @@ class Dashboard(Gtk.Box):
         live_card.pack_start(meters, False, False, 0)
         self.pack_start(live_card, False, False, 0)
 
+        # --- Değerlendirme (danışman özeti) ---
+        assess_head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        assess_title = Gtk.Label(label="💬  Değerlendirme")
+        assess_title.set_halign(Gtk.Align.START)
+        assess_title.get_style_context().add_class("settings-section-title")
+        assess_head.pack_start(assess_title, False, False, 0)
+        self.advisor_badge = Gtk.Label(label="")
+        self.advisor_badge.get_style_context().add_class("advisor-badge")
+        assess_head.pack_start(self.advisor_badge, False, False, 0)
+        assess_head.set_margin_top(6)
+        self.pack_start(assess_head, False, False, 0)
+
+        self.assessment_lbl = Gtk.Label(
+            label="Değerlendirme, tarama tamamlanınca burada görünecek.")
+        self.assessment_lbl.set_halign(Gtk.Align.START)
+        self.assessment_lbl.set_xalign(0.0)
+        self.assessment_lbl.set_line_wrap(True)
+        self.assessment_lbl.get_style_context().add_class("assessment-box")
+        self.pack_start(self.assessment_lbl, False, False, 0)
+
         # --- İçgörüler ---
         ins_title = Gtk.Label(label="🧠  Akıllı İçgörüler")
         ins_title.set_halign(Gtk.Align.START)
@@ -107,6 +127,11 @@ class Dashboard(Gtk.Box):
         self.pack_start(scroll, True, True, 0)
 
         self._show_placeholder("Kontroller çalıştırıldığında içgörüler burada görünür.")
+
+    def set_assessment(self, text: str, advisor_name: str = "") -> None:
+        """Danışman (kural/AI) değerlendirme metnini gösterir."""
+        self.assessment_lbl.set_label(text or "—")
+        self.advisor_badge.set_label(f"· {advisor_name}" if advisor_name else "")
 
     def update_live(self, sample, dark: bool) -> None:
         """Canlı izleme çubuklarını günceller (saniyede ~bir çağrılır)."""

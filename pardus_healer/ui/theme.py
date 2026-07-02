@@ -172,6 +172,21 @@ window, .main-area { background-color: @@BG@@; }
 /* ---- Ayarlar ---- */
 .settings-section-title { font-weight: 700; font-size: 14pt; color: @@TITLE@@; margin-bottom: 6px; }
 .settings-label { font-size: 11pt; color: @@BODY@@; }
+
+/* ---- Değerlendirme (danışman) ---- */
+.assessment-box {
+    background-color: @@CARD_BG@@; border: 1px solid @@CARD_BORDER@@;
+    border-left: 4px solid @@ACCENT@@; border-radius: 10px;
+    padding: 14px 18px; font-size: 11pt; color: @@BODY@@;
+}
+.advisor-badge { font-size: 9pt; color: @@MUTED@@; font-weight: 700; }
+
+/* ---- Tanıtım turu ---- */
+.welcome-bg    { background-color: @@CARD_BG@@; }
+.welcome-icon  { font-size: 46pt; }
+.welcome-title { font-weight: 800; font-size: 20pt; color: @@TITLE@@; }
+.welcome-body  { font-size: 12pt; color: @@BODY@@; }
+.welcome-dots  { font-size: 12pt; color: @@ACCENT@@; margin-top: 8px; }
 """
 
 

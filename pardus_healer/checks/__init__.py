@@ -22,6 +22,8 @@ from .security_extra import (
     UnattendedUpgradesCheck,
 )
 from .hardware import BatteryHealthCheck
+from .maintenance import CacheCleanupCheck
+from .boot import BootTimeCheck
 from .logs import JournalErrorsCheck
 
 # Kartların/raporun görüneceği sıra buradaki sıradır.
@@ -44,5 +46,7 @@ ALL_CHECK_CLASSES = [
     OpenPortsCheck,
     SshHardeningCheck,
     UnattendedUpgradesCheck,
+    CacheCleanupCheck,
+    BootTimeCheck,
     JournalErrorsCheck,
 ]

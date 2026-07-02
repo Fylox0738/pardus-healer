@@ -16,7 +16,7 @@ from ..core.engine import (
     compute_health_score,
     score_to_grade,
 )
-from ..core import notify, rules, sysinfo
+from ..core import advisor, notify, rules, sysinfo
 from ..core.history import History
 from ..core.live import LiveSampler
 from ..core.models import CheckResult, DiagnosisReport, Fix
@@ -25,6 +25,7 @@ from . import theme
 from .checks_page import ChecksPage
 from .dashboard import Dashboard
 from .settings_page import SettingsPage
+from .welcome import WelcomeDialog
 
 
 class HealerApp(Gtk.Window):
@@ -82,8 +83,11 @@ class HealerApp(Gtk.Window):
         self.settings_page = SettingsPage(
             self.config.dark_mode,
             self.config.auto_interval_min,
+            self.config.advisor_mode,
+            advisor.is_ollama_available(),
             on_dark_toggle=self.on_dark_toggle,
             on_interval_change=self.on_interval_change,
+            on_advisor_change=self.on_advisor_change,
         )
         self.stack.add_named(self.dashboard, "dashboard")
         self.stack.add_named(self.checks_page, "checks")
@@ -100,6 +104,10 @@ class HealerApp(Gtk.Window):
         # zamanlayıcıyı uygula ve ilk taramayı başlat
         self.on_interval_change(self.config.auto_interval_min, announce=False)
         self.refresh_all()
+
+        # ilk açılışta tanıtım turunu göster
+        if self.config.first_run:
+            GLib.idle_add(self._show_welcome)
 
     # ───────── canlı izleme ─────────
     def _live_tick(self):
@@ -163,7 +171,22 @@ class HealerApp(Gtk.Window):
             buttons[page] = btn
 
         sb.pack_start(Gtk.Label(label=""), True, True, 0)
+
+        # yardım / tanıtım turunu yeniden aç
+        help_btn = Gtk.Button(label="❓  Tanıtım Turu")
+        help_btn.set_relief(Gtk.ReliefStyle.NONE)
+        help_btn.get_style_context().add_class("sidebar-btn")
+        help_btn.connect("clicked", lambda _b: self._show_welcome())
+        sb.pack_start(help_btn, False, False, 0)
         return sb, buttons
+
+    def _show_welcome(self):
+        dlg = WelcomeDialog(self, on_done=self._on_welcome_done)
+        dlg.show_all()
+
+    def _on_welcome_done(self):
+        if self.config.first_run:
+            self.config.first_run = False
 
     def _on_nav(self, _btn, page):
         self.stack.set_visible_child_name(page)
@@ -231,7 +254,26 @@ class HealerApp(Gtk.Window):
         notify.notify_report(
             report.fail_count, report.warn_count, report.health_score
         )
+        # akıllı değerlendirmeyi üret (Ollama seçiliyse arka planda)
+        self._run_advisor(report)
         return False
+
+    def _run_advisor(self, report: DiagnosisReport):
+        """Danışman özetini (kural/AI) arka planda üretip panele yazar."""
+        mode = self.config.advisor_mode
+        if mode == "ollama":
+            self.dashboard.set_assessment(
+                "Yerel yapay zekâ değerlendirme yazıyor…", "Ollama")
+        adv = advisor.get_advisor(mode, self.config.ollama_model)
+
+        def worker():
+            try:
+                text = adv.summarize(report)
+            except Exception as exc:
+                text = f"Değerlendirme üretilemedi: {exc}"
+            GLib.idle_add(self.dashboard.set_assessment, text, adv.name)
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def _update_dashboard(self, report: DiagnosisReport):
         """Dashboard'ı skor, geçmiş ve güncel sistem bilgisiyle tazeler."""
@@ -395,6 +437,17 @@ class HealerApp(Gtk.Window):
         self._apply_css()
         # gösterge rengini/temayı tazele
         self._update_dashboard(self._build_report())
+
+    def on_advisor_change(self, mode: str):
+        self.config.advisor_mode = mode
+        self.checks_page.log(
+            "Öneri motoru: "
+            + ("Yerel Yapay Zekâ (Ollama)" if mode == "ollama"
+               else "Kural Tabanlı")
+        )
+        # mevcut sonuçlarla değerlendirmeyi hemen yenile
+        if self.results_by_id:
+            self._run_advisor(self._build_report())
 
     def on_interval_change(self, minutes: int, announce: bool = True):
         self.config.auto_interval_min = minutes

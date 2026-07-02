@@ -13,7 +13,9 @@ gerektirmeyen, cihazda çalışan bir **kural tabanlı teşhis motoru** kullanı
 
 | Özellik | Açıklama |
 |--------|----------|
+| 🎓 **Tanıtım Turu** | İlk açılışta, teknik olmayan kullanıcıya (ör. okulda öğretmene) uygulamayı adım adım anlatır. Okul/akıllı tahta kullanımı için tasarlandı. |
 | 🧠 **Akıllı Teşhis Motoru** | Tekil sonuçlara değil, aralarındaki neden-sonuç ilişkisine bakar. Örn: "Disk dolu olduğu için APT başarısız oluyor" — asıl çözülmesi gerekeni söyler. |
+| 💬 **Çift Modlu Değerlendirme** | Varsayılan **kural tabanlı** motor doğal dilde özet üretir (güç/internet istemez). İsteğe bağlı **Yerel Yapay Zekâ (Ollama)** modu, gücü yeten makinelerde daha zengin açıklama verir; yoksa otomatik kural moduna düşer. |
 | 📊 **Sağlık Skoru (0–100)** | Sistemin genel sağlığını ağırlıklı bir skor ve harf notu (A–F) ile özetleyen görsel dashboard. |
 | 📡 **Canlı Sistem İzleme** | Dashboard'da gerçek zamanlı CPU / RAM / Disk çubukları (mini görev yöneticisi). |
 | ⚡ **Tek Tıkla Otomatik Onar** | Tespit edilen tüm sorunları onaylı biçimde, sırayla otomatik düzeltir. |
@@ -23,7 +25,8 @@ gerektirmeyen, cihazda çalışan bir **kural tabanlı teşhis motoru** kullanı
 | 🖥️ **CLI Modu** | `--cli` ile arayüzsüz tanı; sunucular ve otomasyon için renkli terminal çıktısı. |
 | ⚡ **Önceliklendirilmiş İçgörüler** | Ne önce yapılmalı? Güvenlik yamaları, kök nedenler ve riskler önem sırasına göre listelenir. |
 | 🔧 **Tek Tıkla Onarım** | Her sorun için güvenli, hazır `pkexec` komutları. Çıktı canlı terminalde akar. |
-| 🛡️ **19 Kontrol** | Ağ, DNS, APT, bozuk paketler, güvenlik güncellemeleri, disk, RAM, swap, CPU yükü/sıcaklığı, pil sağlığı, systemd servisleri, güvenlik duvarı, açık portlar, SSH güvenliği, otomatik güncelleme, günlük hataları... |
+| 🛡️ **21 Kontrol** | Ağ, DNS, APT, bozuk paketler, güvenlik güncellemeleri, disk, temizlenebilir alan, RAM, swap, CPU yükü/sıcaklığı, pil sağlığı, açılış süresi, systemd servisleri, güvenlik duvarı, açık portlar, SSH güvenliği, otomatik güncelleme, günlük hataları... |
+| 🖥️ **Terminalsiz — Okul Dostu** | Tüm işlemler arayüzden yapılır; yönetici parolası gerektiğinde grafik pencere çıkar. Terminal bilgisi gerekmez. |
 | 📄 **HTML + JSON Rapor** | Yazdırılabilir/PDF'lenebilir şık HTML; otomasyon için makine-okur JSON. |
 | 🔔 **Masaüstü Bildirimi** | Kritik sorunlarda `notify-send` ile uyarı. |
 | 🌙 **Koyu/Açık Tema + Otomatik Kontrol** | Ayarlar kalıcı saklanır; belirlenen aralıkta otomatik tarama. |

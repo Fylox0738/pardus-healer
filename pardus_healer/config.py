@@ -12,7 +12,10 @@ import os
 
 _DEFAULTS = {
     "dark_mode": False,
-    "auto_interval_min": 0,   # 0 = kapalı
+    "auto_interval_min": 0,        # 0 = kapalı
+    "first_run": True,             # tanıtım turu ilk açılışta gösterilir
+    "advisor_mode": "rule",        # "rule" (varsayılan) | "ollama"
+    "ollama_model": "llama3.2",    # Ollama seçilirse kullanılacak model
 }
 
 
@@ -63,4 +66,31 @@ class Config:
     @auto_interval_min.setter
     def auto_interval_min(self, value: int) -> None:
         self._data["auto_interval_min"] = int(value)
+        self.save()
+
+    @property
+    def first_run(self) -> bool:
+        return bool(self._data["first_run"])
+
+    @first_run.setter
+    def first_run(self, value: bool) -> None:
+        self._data["first_run"] = bool(value)
+        self.save()
+
+    @property
+    def advisor_mode(self) -> str:
+        return str(self._data["advisor_mode"])
+
+    @advisor_mode.setter
+    def advisor_mode(self, value: str) -> None:
+        self._data["advisor_mode"] = str(value)
+        self.save()
+
+    @property
+    def ollama_model(self) -> str:
+        return str(self._data["ollama_model"])
+
+    @ollama_model.setter
+    def ollama_model(self, value: str) -> None:
+        self._data["ollama_model"] = str(value)
         self.save()
