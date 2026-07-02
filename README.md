@@ -15,7 +15,10 @@ gerektirmeyen, cihazda çalışan bir **kural tabanlı teşhis motoru** kullanı
 |--------|----------|
 | 🧠 **Akıllı Teşhis Motoru** | Tekil sonuçlara değil, aralarındaki neden-sonuç ilişkisine bakar. Örn: "Disk dolu olduğu için APT başarısız oluyor" — asıl çözülmesi gerekeni söyler. |
 | 📊 **Sağlık Skoru (0–100)** | Sistemin genel sağlığını ağırlıklı bir skor ve harf notu (A–F) ile özetleyen görsel dashboard. |
+| 📡 **Canlı Sistem İzleme** | Dashboard'da gerçek zamanlı CPU / RAM / Disk çubukları (mini görev yöneticisi). |
+| ⚡ **Tek Tıkla Otomatik Onar** | Tespit edilen tüm sorunları onaylı biçimde, sırayla otomatik düzeltir. |
 | 📈 **Geçmiş & Trend** | Her tarama kaydedilir; skorun zaman içindeki değişimi cairo grafikle gösterilir. |
+| 🎬 **Animasyonlu & Genişleyebilir Arayüz** | Skor göstergesi akarak dolar; kartlara tıklayınca kök neden/öneri açılır. |
 | ⚡ **Paralel Tarama** | Kontroller aynı anda çalışır; tam tanı saniyeler yerine milisaniyeler sürer. |
 | 🖥️ **CLI Modu** | `--cli` ile arayüzsüz tanı; sunucular ve otomasyon için renkli terminal çıktısı. |
 | ⚡ **Önceliklendirilmiş İçgörüler** | Ne önce yapılmalı? Güvenlik yamaları, kök nedenler ve riskler önem sırasına göre listelenir. |

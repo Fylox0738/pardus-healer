@@ -67,6 +67,7 @@ window, .main-area { background-color: @@BG@@; }
     border-radius: 8px; padding: 12px 18px;
 }
 .sidebar-brand { font-weight: 900; font-size: 16pt; color: @@ACCENT@@; }
+.sidebar-tagline { font-size: 8.5pt; color: @@SIDEBAR_TXT@@; }
 .sidebar-sep   { background-color: @@SEP@@; min-height: 1px; }
 
 /* ---- Başlık ---- */
@@ -75,10 +76,12 @@ window, .main-area { background-color: @@BG@@; }
 
 /* ---- Kartlar ---- */
 .card {
-    background-color: @@CARD_BG@@; border-radius: 10px;
-    padding: 16px 20px; margin: 5px 0px;
+    background-color: @@CARD_BG@@; border-radius: 12px;
+    padding: 14px 20px; margin: 4px 0px;
     border: 1px solid @@CARD_BORDER@@;
+    transition: border-color 160ms ease, background-color 160ms ease;
 }
+.card:hover { border-color: @@ACCENT@@; }
 .card-ok      { border-left: 4px solid #22c55e; }
 .card-warn    { border-left: 4px solid #eab308; }
 .card-fail    { border-left: 4px solid #ef4444; }
@@ -86,8 +89,21 @@ window, .main-area { background-color: @@BG@@; }
 .card-info-b  { border-left: 4px solid #3b82f6; }
 .card-title   { font-weight: 700; font-size: 12.5pt; color: @@TITLE@@; }
 .card-info    { font-size: 10.5pt; color: @@BODY@@; margin-top: 2px; }
-.card-cat     { font-size: 9pt; color: @@MUTED@@; }
+.card-cat {
+    font-size: 8pt; color: @@MUTED@@; font-weight: 700;
+    border: 1px solid @@CARD_BORDER@@; border-radius: 20px;
+    padding: 1px 8px;
+}
+.card-expander { color: @@MUTED@@; font-size: 10pt; }
+.card-detail {
+    font-size: 10pt; color: @@BODY@@;
+    padding: 4px 12px 8px 0px;
+}
 .status-icon  { font-size: 20pt; }
+
+/* ---- Canlı izleme çubukları ---- */
+.meter-title { font-size: 10pt; color: @@BODY@@; font-weight: 600; }
+.meter-value { font-size: 10pt; color: @@TITLE@@; font-weight: 800; }
 
 /* ---- Sağlık skoru / dashboard ---- */
 .score-big    { font-weight: 900; font-size: 46pt; color: @@ACCENT@@; }
@@ -118,12 +134,25 @@ window, .main-area { background-color: @@BG@@; }
 /* ---- Butonlar ---- */
 .fix-button {
     background: @@ACCENT@@; color: white; font-weight: bold;
-    border-radius: 6px; padding: 8px 18px; border: none;
+    border-radius: 8px; padding: 8px 18px; border: none;
+    transition: background 140ms ease, box-shadow 140ms ease;
 }
+.fix-button:hover { background: #00c2b6; box-shadow: 0 2px 10px rgba(0,167,157,0.4); }
 .report-button {
-    background: @@SIDEBAR_BG@@; color: white; font-weight: bold;
-    border-radius: 6px; padding: 8px 18px; border: none;
+    background: transparent; color: @@TITLE@@; font-weight: bold;
+    border-radius: 8px; padding: 8px 18px;
+    border: 1px solid @@CARD_BORDER@@;
+    transition: border-color 140ms ease, color 140ms ease;
 }
+.report-button:hover { border-color: @@ACCENT@@; color: @@ACCENT@@; }
+/* "Otomatik Onar" — dikkat çekici degrade */
+.heal-button {
+    background: linear-gradient(90deg, #00a79d, #22c55e);
+    color: white; font-weight: bold;
+    border-radius: 8px; padding: 8px 18px; border: none;
+    transition: box-shadow 140ms ease;
+}
+.heal-button:hover { box-shadow: 0 3px 14px rgba(34,197,94,0.45); }
 
 /* ---- Banner ---- */
 .apt-banner {

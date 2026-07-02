@@ -1,4 +1,8 @@
-"""Tek bir tanı kontrolünü gösteren kart bileşeni."""
+"""Tek bir tanı kontrolünü gösteren kart bileşeni.
+
+Kart tıklanabilir: başlığa tıklandığında kök neden ve öneri gibi ayrıntılar
+yumuşak bir animasyonla açılıp kapanır (Gtk.Revealer).
+"""
 
 from __future__ import annotations
 
@@ -28,7 +32,7 @@ class DiagnosticCard(Gtk.Box):
         log_callback: Callable[[str], None],
         recheck_callback: Callable[[str], None],
     ):
-        super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.get_style_context().add_class("card")
         self.get_style_context().add_class("card-wait")
 
@@ -39,23 +43,29 @@ class DiagnosticCard(Gtk.Box):
         self.current_fix: Optional[Fix] = None
         self.last_result: Optional[CheckResult] = None
 
-        # Sol: ikon
+        # ── Başlık satırı (tıklanabilir) ──
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+
+        self.expander = Gtk.Label(label=" ")
+        self.expander.get_style_context().add_class("card-expander")
+        self.expander.set_size_request(14, -1)
+        header.pack_start(self.expander, False, False, 0)
+
         self.icon_label = Gtk.Label(label=icon)
         self.icon_label.get_style_context().add_class("status-icon")
-        self.icon_label.set_size_request(36, -1)
-        self.pack_start(self.icon_label, False, False, 0)
+        self.icon_label.set_size_request(34, -1)
+        header.pack_start(self.icon_label, False, False, 0)
 
-        # Orta: başlık + kategori + özet
         mid = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        head_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         self.title_label = Gtk.Label(label=title)
         self.title_label.set_halign(Gtk.Align.START)
         self.title_label.get_style_context().add_class("card-title")
-        head.pack_start(self.title_label, False, False, 0)
+        head_row.pack_start(self.title_label, False, False, 0)
         self.cat_label = Gtk.Label(label=category)
         self.cat_label.get_style_context().add_class("card-cat")
-        head.pack_start(self.cat_label, False, False, 0)
-        mid.pack_start(head, False, False, 0)
+        head_row.pack_start(self.cat_label, False, False, 0)
+        mid.pack_start(head_row, False, False, 0)
 
         self.info_label = Gtk.Label(label="Bekleniyor...")
         self.info_label.set_halign(Gtk.Align.START)
@@ -63,24 +73,52 @@ class DiagnosticCard(Gtk.Box):
         self.info_label.set_xalign(0.0)
         self.info_label.get_style_context().add_class("card-info")
         mid.pack_start(self.info_label, False, False, 0)
-        self.pack_start(mid, True, True, 0)
+        header.pack_start(mid, True, True, 0)
 
-        # Spinner
         self.spinner = Gtk.Spinner()
-        self.pack_start(self.spinner, False, False, 0)
+        header.pack_start(self.spinner, False, False, 0)
 
-        # Durum ikonu
         self.status_label = Gtk.Label(label="⏳")
         self.status_label.get_style_context().add_class("status-icon")
-        self.pack_start(self.status_label, False, False, 0)
+        header.pack_start(self.status_label, False, False, 0)
 
-        # Düzelt butonu
         self.fix_btn = Gtk.Button(label="Düzelt")
         self.fix_btn.get_style_context().add_class("fix-button")
         self.fix_btn.set_no_show_all(True)
         self.fix_btn.set_visible(False)
         self.fix_btn.connect("clicked", self._on_fix_clicked)
-        self.pack_start(self.fix_btn, False, False, 0)
+        header.pack_start(self.fix_btn, False, False, 0)
+
+        # başlığı tıklanabilir yap (ayrıntıları aç/kapa)
+        self._header_event = Gtk.EventBox()
+        self._header_event.set_visible_window(False)
+        self._header_event.add(header)
+        self._header_event.connect("button-press-event", self._on_header_click)
+        self.pack_start(self._header_event, False, False, 0)
+
+        # ── Ayrıntı bölmesi (açılır) ──
+        self.revealer = Gtk.Revealer()
+        self.revealer.set_transition_type(
+            Gtk.RevealerTransitionType.SLIDE_DOWN)
+        self.revealer.set_transition_duration(180)
+        self.detail_label = Gtk.Label(label="")
+        self.detail_label.set_halign(Gtk.Align.START)
+        self.detail_label.set_xalign(0.0)
+        self.detail_label.set_line_wrap(True)
+        self.detail_label.set_margin_top(8)
+        self.detail_label.set_margin_start(62)
+        self.detail_label.get_style_context().add_class("card-detail")
+        self.revealer.add(self.detail_label)
+        self.pack_start(self.revealer, False, False, 0)
+        self._has_detail = False
+
+    # ---- tıklama / açılır ----
+    def _on_header_click(self, _widget, _event):
+        if self._has_detail:
+            self.revealer.set_reveal_child(not self.revealer.get_reveal_child())
+            self.expander.set_label(
+                "▾" if self.revealer.get_reveal_child() else "▸")
+        return False
 
     # ---- durum ----
     def set_checking(self) -> None:
@@ -104,6 +142,24 @@ class DiagnosticCard(Gtk.Box):
             self.fix_btn.set_visible(True)
         else:
             self.fix_btn.set_visible(False)
+
+        # ayrıntı metnini kur
+        parts = []
+        if result.detail:
+            parts.append(result.detail)
+        if result.root_cause:
+            parts.append(f"🔎 Olası neden: {result.root_cause}")
+        if result.recommendation:
+            parts.append(f"💡 Öneri: {result.recommendation}")
+        detail_text = "\n".join(parts)
+        self._has_detail = bool(detail_text)
+        self.detail_label.set_label(detail_text)
+        if not self._has_detail:
+            self.revealer.set_reveal_child(False)
+            self.expander.set_label(" ")
+        else:
+            self.expander.set_label(
+                "▾" if self.revealer.get_reveal_child() else "▸")
 
     def _set_border(self, css_class: str) -> None:
         ctx = self.get_style_context()
@@ -142,5 +198,4 @@ class DiagnosticCard(Gtk.Box):
         except Exception as exc:
             GLib.idle_add(self.log_callback, f"Hata: {exc}\n")
         finally:
-            # İşlem sonrası kontrolü tazele.
             GLib.idle_add(self.recheck_callback, self.check_id)

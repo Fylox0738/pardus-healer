@@ -18,6 +18,7 @@ from ..core.engine import (
 )
 from ..core import notify, rules, sysinfo
 from ..core.history import History
+from ..core.live import LiveSampler
 from ..core.models import CheckResult, DiagnosisReport, Fix
 from ..report.html_report import save_html_report
 from . import theme
@@ -37,8 +38,10 @@ class HealerApp(Gtk.Window):
         self.engine = DiagnosisEngine()
         self.checks = self.engine.checks
         self.history = History()
+        self.live_sampler = LiveSampler()
         self.results_by_id: dict[str, CheckResult] = {}
         self._auto_timer_id = None
+        self._live_timer_id = None
         self._is_running = False
 
         # CSS
@@ -74,6 +77,7 @@ class HealerApp(Gtk.Window):
             recheck_callback=self.recheck_one,
             refresh_all_callback=self.refresh_all,
             report_callback=self.generate_report,
+            fix_all_callback=self.fix_all,
         )
         self.settings_page = SettingsPage(
             self.config.dark_mode,
@@ -89,9 +93,22 @@ class HealerApp(Gtk.Window):
         self.show_all()
         self.banner.set_visible(False)
 
+        # canlı izleme zamanlayıcısı (gerçek zamanlı CPU/RAM/Disk)
+        self._live_timer_id = GLib.timeout_add(1200, self._live_tick)
+        self._live_tick()
+
         # zamanlayıcıyı uygula ve ilk taramayı başlat
         self.on_interval_change(self.config.auto_interval_min, announce=False)
         self.refresh_all()
+
+    # ───────── canlı izleme ─────────
+    def _live_tick(self):
+        try:
+            sample = self.live_sampler.sample()
+            self.dashboard.update_live(sample, self.config.dark_mode)
+        except Exception:
+            pass
+        return True
 
     # ───────── CSS ─────────
     def _apply_css(self):
@@ -113,8 +130,14 @@ class HealerApp(Gtk.Window):
         brand.get_style_context().add_class("sidebar-brand")
         brand.set_halign(Gtk.Align.START)
         brand.set_margin_start(18)
-        brand.set_margin_bottom(6)
         sb.pack_start(brand, False, False, 0)
+
+        tagline = Gtk.Label(label="Akıllı Sistem Bakımı")
+        tagline.get_style_context().add_class("sidebar-tagline")
+        tagline.set_halign(Gtk.Align.START)
+        tagline.set_margin_start(18)
+        tagline.set_margin_bottom(6)
+        sb.pack_start(tagline, False, False, 0)
 
         sep = Gtk.Separator()
         sep.get_style_context().add_class("sidebar-sep")
@@ -170,10 +193,17 @@ class HealerApp(Gtk.Window):
         # süresi, en yavaş kontrol kadar kısalır.
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
-        with ThreadPoolExecutor(max_workers=min(8, len(self.checks))) as pool:
+        total = len(self.checks)
+        done = 0
+        with ThreadPoolExecutor(max_workers=min(8, total)) as pool:
             futures = [pool.submit(c.execute) for c in self.checks]
             for fut in as_completed(futures):
+                done += 1
                 GLib.idle_add(self._apply_result, fut.result())
+                GLib.idle_add(
+                    self._set_banner,
+                    f"🔍  Sistem taranıyor…  {done}/{total}", True,
+                )
         GLib.idle_add(self._on_refresh_done)
 
     def _apply_result(self, result: CheckResult):
@@ -283,6 +313,81 @@ class HealerApp(Gtk.Window):
             GLib.idle_add(self.checks_page.log, f"Hata: {exc}\n")
         finally:
             GLib.idle_add(self.refresh_all)
+
+    # ───────── otomatik onar (tümü) ─────────
+    def fix_all(self):
+        if self._is_running:
+            return
+        # onarılabilir sorunları kontrol sırasına göre topla
+        pending = []
+        for check in self.checks:
+            res = self.results_by_id.get(check.id)
+            if res is not None and res.is_actionable and res.fix is not None:
+                pending.append((res.title, res.fix))
+
+        if not pending:
+            self._on_nav_sync("checks")
+            self.stack.set_visible_child_name("checks")
+            self.checks_page.log("✓ Otomatik onar: düzeltilecek bir sorun yok.")
+            return
+
+        # kullanıcı onayı — birden çok yetkili komut çalışacak
+        listing = "\n".join(f"  • {title} → {fix.label}" for title, fix in pending)
+        dlg = Gtk.MessageDialog(
+            transient_for=self, flags=0,
+            message_type=Gtk.MessageType.QUESTION,
+            buttons=Gtk.ButtonsType.OK_CANCEL,
+            text=f"{len(pending)} sorun için otomatik onarım çalıştırılsın mı?",
+        )
+        dlg.format_secondary_text(
+            f"Aşağıdaki düzeltmeler sırayla uygulanacak:\n\n{listing}\n\n"
+            "Her adım için yönetici parolası istenebilir."
+        )
+        response = dlg.run()
+        dlg.destroy()
+        if response != Gtk.ResponseType.OK:
+            return
+
+        self._on_nav_sync("checks")
+        self.stack.set_visible_child_name("checks")
+        self.checks_page.fix_all_btn.set_sensitive(False)
+        self._is_running = True
+        self.checks_page.log(f"══ Otomatik onarım başladı ({len(pending)} adım) ══")
+        threading.Thread(
+            target=self._fix_all_worker, args=(pending,), daemon=True
+        ).start()
+
+    def _fix_all_worker(self, pending):
+        for idx, (title, fix) in enumerate(pending, start=1):
+            GLib.idle_add(
+                self.checks_page.log,
+                f"\n──▶ [{idx}/{len(pending)}] {title}: {fix.command}",
+            )
+            try:
+                proc = subprocess.Popen(
+                    fix.resolved_command(), shell=True,
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                )
+                assert proc.stdout is not None
+                for line in iter(proc.stdout.readline, ""):
+                    if line:
+                        GLib.idle_add(self.checks_page.log, line.rstrip())
+                proc.stdout.close()
+                proc.wait()
+                GLib.idle_add(
+                    self.checks_page.log,
+                    f"   ✓ Adım {idx} tamamlandı (çıkış kodu: {proc.returncode})",
+                )
+            except Exception as exc:
+                GLib.idle_add(self.checks_page.log, f"   ✗ Hata: {exc}")
+        GLib.idle_add(self._fix_all_done)
+
+    def _fix_all_done(self):
+        self._is_running = False
+        self.checks_page.fix_all_btn.set_sensitive(True)
+        self.checks_page.log("══ Otomatik onarım bitti · yeniden taranıyor ══")
+        self.refresh_all()
+        return False
 
     # ───────── ayar callback'leri ─────────
     def on_dark_toggle(self, active: bool):

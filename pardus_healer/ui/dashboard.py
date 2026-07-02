@@ -10,7 +10,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa: E402
 
 from ..core.models import DiagnosisReport, Fix, Insight, Status
-from .widgets import HealthGauge, TrendChart
+from .widgets import HealthGauge, LiveMeter, TrendChart
 
 _GRADE_HEX = {
     "A": "#22c55e", "B": "#84cc16", "C": "#eab308",
@@ -75,6 +75,24 @@ class Dashboard(Gtk.Box):
         self.sysinfo_label.get_style_context().add_class("page-sub")
         self.pack_start(self.sysinfo_label, False, False, 0)
 
+        # ── Canlı izleme (gerçek zamanlı CPU/RAM/Disk) ──
+        live_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        live_card.get_style_context().add_class("dash-stat")
+        live_head = Gtk.Label(label="📡  Canlı İzleme")
+        live_head.set_halign(Gtk.Align.START)
+        live_head.get_style_context().add_class("dash-stat-label")
+        live_card.pack_start(live_head, False, False, 0)
+
+        meters = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=22)
+        meters.set_homogeneous(True)
+        self.meter_cpu = LiveMeter("İşlemci", "🧮")
+        self.meter_ram = LiveMeter("Bellek", "🧠")
+        self.meter_disk = LiveMeter("Disk", "💾")
+        for m in (self.meter_cpu, self.meter_ram, self.meter_disk):
+            meters.pack_start(m, True, True, 0)
+        live_card.pack_start(meters, False, False, 0)
+        self.pack_start(live_card, False, False, 0)
+
         # --- İçgörüler ---
         ins_title = Gtk.Label(label="🧠  Akıllı İçgörüler")
         ins_title.set_halign(Gtk.Align.START)
@@ -89,6 +107,12 @@ class Dashboard(Gtk.Box):
         self.pack_start(scroll, True, True, 0)
 
         self._show_placeholder("Kontroller çalıştırıldığında içgörüler burada görünür.")
+
+    def update_live(self, sample, dark: bool) -> None:
+        """Canlı izleme çubuklarını günceller (saniyede ~bir çağrılır)."""
+        self.meter_cpu.set_percent(sample.cpu_percent, dark)
+        self.meter_ram.set_percent(sample.ram_percent, dark)
+        self.meter_disk.set_percent(sample.disk_percent, dark)
 
     # ---- yardımcılar ----
     def _make_stat(self, label: str, value: str) -> dict:

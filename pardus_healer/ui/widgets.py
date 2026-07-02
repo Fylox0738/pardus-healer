@@ -7,7 +7,7 @@ import math
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk  # noqa: E402
+from gi.repository import GLib, Gtk  # noqa: E402
 
 
 _GRADE_RGB = {
@@ -27,17 +27,34 @@ class HealthGauge(Gtk.DrawingArea):
 
     def __init__(self, size: int = 170):
         super().__init__()
-        self._score = 0
+        self._score = 0          # anlık gösterilen (animasyon için)
+        self._target = 0         # hedef skor
         self._grade = "F"
         self._dark = False
+        self._anim_id = None
         self.set_size_request(size, size)
         self.connect("draw", self._on_draw)
 
     def set_value(self, score: int, grade: str, dark: bool = False) -> None:
-        self._score = max(0, min(100, int(score)))
+        self._target = max(0, min(100, int(score)))
         self._grade = grade
         self._dark = dark
+        # skoru hedefe doğru yumuşakça akıt
+        if self._anim_id is None:
+            self._anim_id = GLib.timeout_add(16, self._animate)
         self.queue_draw()
+
+    def _animate(self) -> bool:
+        diff = self._target - self._score
+        if abs(diff) <= 1:
+            self._score = self._target
+            self.queue_draw()
+            self._anim_id = None
+            return False
+        # her adımda farkın bir kısmını kapat (ease-out)
+        self._score += diff * 0.18
+        self.queue_draw()
+        return True
 
     def _on_draw(self, _widget, cr):
         alloc = self.get_allocation()
@@ -66,7 +83,7 @@ class HealthGauge(Gtk.DrawingArea):
         cr.set_source_rgb(r, g, b)
         cr.select_font_face("Sans", 0, 1)  # normal, bold
         cr.set_font_size(radius * 0.62)
-        text = str(self._score)
+        text = str(int(round(self._score)))
         ext = cr.text_extents(text)
         cr.move_to(cx - ext.width / 2 - ext.x_bearing,
                    cy - ext.height / 2 - ext.y_bearing - radius * 0.06)
@@ -154,4 +171,71 @@ class TrendChart(Gtk.DrawingArea):
         x, y = pt(n - 1, vals[-1])
         cr.arc(x, y, 3, 0, 2 * 3.14159)
         cr.fill()
+        return False
+
+
+class LiveMeter(Gtk.Box):
+    """Canlı yüzde göstergesi: başlık + değer + renkli ince çubuk.
+
+    Değer, seviyeye göre renklenir (düşük=yeşil, orta=sarı, yüksek=kırmızı).
+    None verilirse (ör. veri yok) çubuk gri ve '—' gösterilir.
+    """
+
+    def __init__(self, title: str, icon: str = ""):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        self._percent = None
+        self._dark = False
+
+        head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        name = Gtk.Label(label=f"{icon} {title}".strip())
+        name.set_halign(Gtk.Align.START)
+        name.get_style_context().add_class("meter-title")
+        head.pack_start(name, False, False, 0)
+        self._value_lbl = Gtk.Label(label="—")
+        self._value_lbl.set_halign(Gtk.Align.END)
+        self._value_lbl.get_style_context().add_class("meter-value")
+        head.pack_end(self._value_lbl, False, False, 0)
+        self.pack_start(head, False, False, 0)
+
+        self._bar = Gtk.DrawingArea()
+        self._bar.set_size_request(-1, 10)
+        self._bar.connect("draw", self._on_draw)
+        self.pack_start(self._bar, False, False, 0)
+
+    def set_percent(self, percent, dark: bool = False) -> None:
+        self._percent = percent
+        self._dark = dark
+        if percent is None:
+            self._value_lbl.set_text("—")
+        else:
+            self._value_lbl.set_text(f"%{int(round(percent))}")
+        self._bar.queue_draw()
+
+    def _on_draw(self, _widget, cr):
+        alloc = self._bar.get_allocation()
+        w, h = alloc.width, alloc.height
+        radius = h / 2
+
+        def rounded(x0, width, color):
+            cr.set_source_rgb(*color)
+            cr.arc(x0 + radius, radius, radius, math.pi / 2, 3 * math.pi / 2)
+            cr.arc(x0 + width - radius, radius, radius,
+                   3 * math.pi / 2, math.pi / 2)
+            cr.close_path()
+            cr.fill()
+
+        track = (0.20, 0.25, 0.33) if self._dark else (0.88, 0.91, 0.94)
+        rounded(0, w, track)
+
+        if self._percent is None:
+            return False
+        pct = max(0.0, min(100.0, float(self._percent)))
+        fill_w = max(h, w * pct / 100.0)
+        if pct >= 85:
+            color = (0.94, 0.27, 0.27)
+        elif pct >= 65:
+            color = (0.92, 0.70, 0.03)
+        else:
+            color = (0.13, 0.77, 0.37)
+        rounded(0, fill_w, color)
         return False

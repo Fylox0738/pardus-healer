@@ -22,6 +22,7 @@ class ChecksPage(Gtk.Paned):
         recheck_callback: Callable[[str], None],
         refresh_all_callback: Callable,
         report_callback: Callable,
+        fix_all_callback: Callable,
     ):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
@@ -59,6 +60,11 @@ class ChecksPage(Gtk.Paned):
         report_btn.get_style_context().add_class("report-button")
         report_btn.connect("clicked", lambda _b: report_callback())
         btn_bar.pack_start(report_btn, False, False, 0)
+
+        self.fix_all_btn = Gtk.Button(label="⚡  Otomatik Onar")
+        self.fix_all_btn.get_style_context().add_class("heal-button")
+        self.fix_all_btn.connect("clicked", lambda _b: fix_all_callback())
+        btn_bar.pack_start(self.fix_all_btn, False, False, 0)
 
         refresh_btn = Gtk.Button(label="🔄  Tümünü Yeniden Kontrol Et")
         refresh_btn.get_style_context().add_class("fix-button")
