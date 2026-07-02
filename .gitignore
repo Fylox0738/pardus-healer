@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.pyo
+pardus-healer-rapor.html
+pardus-healer-rapor.txt
+.claude/

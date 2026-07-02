@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Pardus Healer
+Name[tr]=Pardus Healer
+Comment=Akıllı sistem tanılama ve iyileştirme aracı
+Comment[tr]=Akıllı sistem tanılama ve iyileştirme aracı
+Exec=python3 /opt/pardus-healer/run.py
+Icon=pardus
+Terminal=false
+Categories=System;Utility;Settings;
+Keywords=sistem;tanı;bakım;onarım;sağlık;healer;

@@ -1,0 +1,14 @@
+# Pardus Healer çalışma zamanı bağımlılıkları
+#
+# Uygulama GTK3 kullanır. Pardus/Debian tabanlı sistemlerde bu paketler
+# APT ile kurulur (pip ile değil):
+#
+#   sudo apt-get install python3-gi gir1.2-gtk-3.0
+#
+# Ek Python paketi gerekmez — tanı motoru yalnızca standart kütüphaneyi
+# kullanır (subprocess, socket, os...). Bu, uygulamanın internetsiz ve
+# ek kurulum olmadan çalışmasını sağlar.
+#
+# İsteğe bağlı (daha zengin donanım bilgisi için):
+#   sudo apt-get install lm-sensors    # CPU sıcaklığı
+#   sudo apt-get install ufw           # güvenlik duvarı yönetimi
