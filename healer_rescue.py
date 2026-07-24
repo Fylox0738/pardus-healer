@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 import os
+import re
 import subprocess
 import sys
+
+# Pardus/Debian paket adlarıyla eşleşen katı bir kalıp — bunun dışındaki
+# hiçbir token argv'ye eklenmez (apt geçmişindeki serbest metinden gelen
+# tokenlerin komut satırına kaçak bayrak/enjeksiyon olarak sızmasını önler).
+_PACKAGE_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9+.\-:]*$")
 
 def print_banner():
     print("=" * 65)
@@ -41,23 +47,27 @@ def parse_history():
             date = rec.get("Start-Date", "")
             cmd = rec.get("Commandline", "")
             if "apt " in cmd or "apt-get " in cmd:
-                revert_cmd = ""
+                revert_action = ""
+                packages = []
                 action_name = ""
                 if "install" in cmd:
-                    pkgs = [w for w in cmd.split() if w not in ["apt", "apt-get", "install", "-y", "sudo", "pkexec"]]
-                    target = " ".join(pkgs)
-                    if target:
-                        revert_cmd = f"apt-get remove -y {target}"
-                        action_name = f"Kurulum: {target}"
+                    raw = [w for w in cmd.split() if w not in ["apt", "apt-get", "install", "-y", "sudo", "pkexec"]]
+                    packages = [w for w in raw if _PACKAGE_NAME_RE.match(w)]
+                    if packages:
+                        revert_action = "remove"
+                        action_name = f"Kurulum: {' '.join(packages)}"
                 elif ("remove" in cmd or "purge" in cmd) and "autoremove" not in cmd:
-                    pkgs = [w for w in cmd.split() if w not in ["apt", "apt-get", "remove", "purge", "-y", "sudo", "pkexec"]]
-                    target = " ".join(pkgs)
-                    if target:
-                        revert_cmd = f"apt-get install -y {target}"
-                        action_name = f"Silme: {target}"
-                
-                if revert_cmd:
-                    actions.append({"date": date, "name": action_name, "revert": revert_cmd})
+                    raw = [w for w in cmd.split() if w not in ["apt", "apt-get", "remove", "purge", "-y", "sudo", "pkexec"]]
+                    packages = [w for w in raw if _PACKAGE_NAME_RE.match(w)]
+                    if packages:
+                        revert_action = "install"
+                        action_name = f"Silme: {' '.join(packages)}"
+
+                if revert_action and packages:
+                    actions.append({
+                        "date": date, "name": action_name,
+                        "revert_action": revert_action, "packages": packages,
+                    })
                     
         return actions
     except Exception as e:
@@ -97,16 +107,18 @@ def main():
         idx = int(choice) - 1
         if 0 <= idx < len(actions) and idx < 10:
             target_action = actions[idx]
-            print(f"\n⚡ Seçilen İşlem TERSİNE Çevriliyor: {target_action['revert']}")
+            argv = ["apt-get", target_action["revert_action"], "-y", "--"] + target_action["packages"]
+            if os.geteuid() != 0:
+                argv = ["sudo"] + argv
+            print(f"\n⚡ Seçilen İşlem TERSİNE Çevriliyor: {' '.join(argv)}")
             confirm = input("Sistemi kurtarmaya emin misiniz? (E/H): ").strip().lower()
             if confirm == 'e':
                 print("\n================== KURTARMA BAŞLIYOR ==================")
-                cmd = target_action['revert']
-                if os.geteuid() != 0:
-                    cmd = f"sudo {cmd}"
-                
-                subprocess.run(cmd, shell=True)
-                
+                # shell=True KULLANILMIYOR: apt geçmişinden gelen paket adları
+                # katı bir regex ile doğrulanıp argv listesi olarak çalıştırılıyor,
+                # böylece komut enjeksiyonu (injection) mümkün olmuyor.
+                subprocess.run(argv, shell=False)
+
                 print("=======================================================")
                 print("✅ Kurtarma (Rollback) işlemi tamamlandı.")
                 print("Lütfen siyah ekrandan çıkmak için sistemi yeniden başlatın: 'sudo reboot'")

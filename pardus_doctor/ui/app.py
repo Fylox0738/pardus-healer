@@ -7,7 +7,7 @@ from gi.repository import Gtk, GLib, Gdk
 from pardus_doctor.core.log_reader import LogReader
 from pardus_doctor.core.git_analyzer import GitAnalyzer
 from pardus_doctor.core.ai_engine import AIEngine
-from pardus_doctor.core.safety import check_command_safety
+from pardus_doctor.core.safety import check_command_safety, to_argv
 from pardus_healer.ui import theme
 
 class DoctorApp(Gtk.Window):
@@ -230,13 +230,22 @@ class DoctorApp(Gtk.Window):
         dialog.destroy()
         
         if response == Gtk.ResponseType.YES:
-            self.write_report("▶ Komut çalıştırılıyor...", "header")
+            argv = to_argv(cmd)
+            if not argv:
+                self.write_report("❌ Komut ayrıştırılamadı, güvenlik nedeniyle çalıştırılmadı.", "bold")
+                return
+            self.write_report("▶ Komut çalıştırılıyor (shell olmadan, argv listesiyle)...", "header")
             try:
                 import subprocess
-                p = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                # shell=True KULLANILMIYOR: argv listesi olarak calistirmak,
+                # kabuk yorumlamasindan (metakarakter/komut zincirleme) kaynaklanan
+                # command injection riskini ortadan kaldirir.
+                p = subprocess.run(argv, shell=False, capture_output=True, text=True)
                 if p.stdout: self.write_report(p.stdout)
                 if p.stderr: self.write_report("Hata Çıktısı:\n" + p.stderr)
                 self.write_report(f"✅ Çıkış Kodu: {p.returncode}", "bold")
+            except FileNotFoundError:
+                self.write_report(f"❌ Komut/araç bulunamadı: {argv[0]}", "bold")
             except Exception as e:
                 self.write_report(f"❌ Çalıştırma hatası: {e}", "bold")
         else:
