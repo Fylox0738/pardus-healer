@@ -21,18 +21,32 @@ _GRADE_HEX = {
 class Dashboard(Gtk.Box):
     """Tanı turunun üst düzey özetini gösteren panel."""
 
-    def __init__(self, on_fix: Callable[[Fix], None]):
+    def __init__(self, on_fix: Callable[[Fix], None], on_sos: Callable[[], None] | None = None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=16)
         self.on_fix = on_fix
+        self.on_sos = on_sos
         self.set_margin_start(28)
         self.set_margin_end(28)
         self.set_margin_top(22)
         self.set_margin_bottom(16)
 
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         title = Gtk.Label(label="Sistem Sağlığı")
         title.set_halign(Gtk.Align.START)
         title.get_style_context().add_class("page-title")
-        self.pack_start(title, False, False, 0)
+        header.pack_start(title, True, True, 0)
+
+        if self.on_sos is not None:
+            sos_btn = Gtk.Button(label="🆘  Yardım İste")
+            sos_btn.get_style_context().add_class("fix-button")
+            sos_btn.set_tooltip_text(
+                "Teknik olmayan biri için: sorunu sade bir dille özetler ve "
+                "yarışma/destek formatında hazır bir rapor üretir."
+            )
+            sos_btn.connect("clicked", lambda _b: self.on_sos())
+            header.pack_start(sos_btn, False, False, 0)
+
+        self.pack_start(header, False, False, 0)
 
         # --- Üst şerit: gösterge + istatistikler ---
         top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=24)

@@ -19,12 +19,14 @@ from ..core.engine import (
 from ..core import advisor, notify, rules, sysinfo
 from ..core.history import History
 from ..core.live import LiveSampler
+from ..core.bug_report import build_sos_report
 from ..core.models import CheckResult, DiagnosisReport, Fix
 from ..report.html_report import save_html_report
 from . import theme
 from .checks_page import ChecksPage
 from .dashboard import Dashboard
 from .settings_page import SettingsPage
+from .sos_dialog import SosDialog
 from .welcome import WelcomeDialog
 
 
@@ -44,6 +46,7 @@ class HealerApp(Gtk.Window):
         self._auto_timer_id = None
         self._live_timer_id = None
         self._is_running = False
+        self._last_assessment_text = ""
 
         # CSS
         self.css_provider = Gtk.CssProvider()
@@ -72,7 +75,7 @@ class HealerApp(Gtk.Window):
         self.stack.set_transition_duration(180)
         right.pack_start(self.stack, True, True, 0)
 
-        self.dashboard = Dashboard(on_fix=self.run_fix)
+        self.dashboard = Dashboard(on_fix=self.run_fix, on_sos=self.open_sos_dialog)
         self.checks_page = ChecksPage(
             self.checks,
             recheck_callback=self.recheck_one,
@@ -287,9 +290,24 @@ class HealerApp(Gtk.Window):
                 text = adv.summarize(report)
             except Exception as exc:
                 text = f"Değerlendirme üretilemedi: {exc}"
+            self._last_assessment_text = text
             GLib.idle_add(self.dashboard.set_assessment, text, adv.name)
 
         threading.Thread(target=worker, daemon=True).start()
+
+    # ───────── SOS Kartı ─────────
+    def open_sos_dialog(self):
+        report = self._build_report()
+        if not report.results:
+            self.checks_page.log("SOS Kartı için önce bir tarama tamamlanmalı.")
+            return
+        plain_summary = self._last_assessment_text or (
+            f"Sağlık skoru {report.health_score}/100 (Not: {report.grade})."
+        )
+        sysinfo_text = "   ·   ".join(f"{k}: {v}" for k, v in sysinfo.collect().as_pairs())
+        sos = build_sos_report(report, plain_summary, sysinfo_text)
+        dlg = SosDialog(self, sos)
+        dlg.run()
 
     def _update_dashboard(self, report: DiagnosisReport):
         """Dashboard'ı skor, geçmiş ve güncel sistem bilgisiyle tazeler."""
