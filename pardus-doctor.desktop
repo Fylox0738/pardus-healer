@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Pardus Doctor (Yapay Zeka)
+Comment=Pardus Yapay Zeka Hata Teşhis Aracı
+Exec=python3 /opt/pardus-suite/main_doctor.py
+Icon=/usr/share/pardus-suite/assets/doctor.svg
+Terminal=false
+Type=Application
+Categories=System;Utility;
+Keywords=pardus;doctor;ai;log;teknofest;

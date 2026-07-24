@@ -172,6 +172,13 @@ class HealerApp(Gtk.Window):
 
         sb.pack_start(Gtk.Label(label=""), True, True, 0)
 
+        # Pardus Doctor'ı ayrı süreç olarak başlat
+        doctor_btn = Gtk.Button(label="🩺  Doctor (Yapay Zeka)")
+        doctor_btn.set_relief(Gtk.ReliefStyle.NONE)
+        doctor_btn.get_style_context().add_class("sidebar-btn")
+        doctor_btn.connect("clicked", self._on_launch_doctor)
+        sb.pack_start(doctor_btn, False, False, 0)
+
         # yardım / tanıtım turunu yeniden aç
         help_btn = Gtk.Button(label="❓  Tanıtım Turu")
         help_btn.set_relief(Gtk.ReliefStyle.NONE)
@@ -179,6 +186,15 @@ class HealerApp(Gtk.Window):
         help_btn.connect("clicked", lambda _b: self._show_welcome())
         sb.pack_start(help_btn, False, False, 0)
         return sb, buttons
+
+    def _on_launch_doctor(self, _btn):
+        import os
+        import subprocess
+        import sys
+        self.checks_page.log("──▶ Pardus Doctor (Yapay Zeka Analiz Motoru) başlatılıyor...")
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        doctor_script = os.path.join(project_root, "main_doctor.py")
+        subprocess.Popen([sys.executable, doctor_script])
 
     def _show_welcome(self):
         dlg = WelcomeDialog(self, on_done=self._on_welcome_done)
