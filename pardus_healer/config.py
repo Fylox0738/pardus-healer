@@ -16,6 +16,7 @@ _DEFAULTS = {
     "first_run": True,             # tanıtım turu ilk açılışta gösterilir
     "advisor_mode": "rule",        # "rule" (varsayılan) | "ollama"
     "ollama_model": "llama3.2",    # Ollama seçilirse kullanılacak model
+    "swarm_token": "",             # Ağ içi yetkilendirme (Zero-Trust)
 }
 
 
@@ -93,4 +94,18 @@ class Config:
     @ollama_model.setter
     def ollama_model(self, value: str) -> None:
         self._data["ollama_model"] = str(value)
+        self.save()
+
+    @property
+    def swarm_token(self) -> str:
+        token = str(self._data.get("swarm_token", ""))
+        if not token:
+            import secrets
+            token = secrets.token_hex(16)
+            self.swarm_token = token
+        return token
+
+    @swarm_token.setter
+    def swarm_token(self, value: str) -> None:
+        self._data["swarm_token"] = str(value)
         self.save()

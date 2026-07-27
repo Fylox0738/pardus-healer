@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+    systemctl daemon-reload
+    systemctl enable pardus-healer-daemon.service || true
+    systemctl start pardus-healer-daemon.service || true
+    systemctl enable pardus-healer-swarm.service || true
+    systemctl start pardus-healer-swarm.service || true
+fi
+
+#DEBHELPER#
+
+exit 0

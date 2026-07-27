@@ -21,7 +21,7 @@ from .security_extra import (
     SshHardeningCheck,
     UnattendedUpgradesCheck,
 )
-from .hardware import BatteryHealthCheck
+from .hardware import BatteryHealthCheck, SmartDiskCheck
 from .maintenance import CacheCleanupCheck
 from .boot import BootTimeCheck
 from .logs import JournalErrorsCheck
@@ -40,6 +40,7 @@ ALL_CHECK_CLASSES = [
     CpuLoadCheck,
     CpuTempCheck,
     BatteryHealthCheck,
+    SmartDiskCheck,
     FailedServicesCheck,
     FirewallCheck,
     PendingRebootCheck,

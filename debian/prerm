@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "remove" ]; then
+    systemctl stop pardus-healer-daemon.service || true
+    systemctl disable pardus-healer-daemon.service || true
+    systemctl stop pardus-healer-swarm.service || true
+    systemctl disable pardus-healer-swarm.service || true
+fi
+
+#DEBHELPER#
+
+exit 0

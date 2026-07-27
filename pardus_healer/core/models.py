@@ -91,8 +91,14 @@ class Fix:
     description: str = ""
 
     def resolved_command(self) -> str:
-        """Gerçekten çalıştırılacak komutu döndürür."""
-        return self.command
+        """Gerçekten çalıştırılacak komutu döndürür (Gerekirse Snapshot ile birlikte)."""
+        import shutil
+        snapshot_cmd = ""
+        # Eğer timeshift kuruluysa, her kritik onarımdan önce anlık snapshot al
+        if shutil.which("timeshift"):
+            snapshot_cmd = "timeshift --create --comments 'Pardus Healer Pre-Fix' && "
+            
+        return snapshot_cmd + self.command
 
 
 @dataclass

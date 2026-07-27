@@ -62,7 +62,28 @@ def run_cli(argv: list[str] | None = None) -> int:
                         help="Kontrolleri paralel yerine sırayla çalıştırır.")
     parser.add_argument("--notify", action="store_true",
                         help="Sorun bulunursa masaüstü bildirimi gönderir.")
+    parser.add_argument("--daemon", action="store_true",
+                        help="Otonom Koruma Kalkanı (Daemon) modunda arka planda çalışır.")
+    parser.add_argument("--server", action="store_true",
+                        help="Filo (Swarm) Yönetimi modunda çalışır ve ağdaki diğer düğümlere hizmet verir.")
+    parser.add_argument("--tray", action="store_true",
+                        help="Görev Çubuğu (System Tray) modunda arkaplanda çalışır.")
     args = parser.parse_args(argv)
+
+    if args.daemon:
+        from .daemon import run_daemon
+        run_daemon()
+        return 0
+        
+    if args.server:
+        from .swarm.server import start_server
+        start_server()
+        return 0
+        
+    if args.tray:
+        from .ui.tray import run_tray
+        run_tray()
+        return 0
 
     use_color = not args.no_color and sys.stdout.isatty()
     if use_color:

@@ -28,6 +28,7 @@ from .dashboard import Dashboard
 from .settings_page import SettingsPage
 from .sos_dialog import SosDialog
 from .welcome import WelcomeDialog
+from .swarm_page import SwarmPage
 
 
 class HealerApp(Gtk.Window):
@@ -83,6 +84,7 @@ class HealerApp(Gtk.Window):
             report_callback=self.generate_report,
             fix_all_callback=self.fix_all,
         )
+        self.swarm_page = SwarmPage()
         self.settings_page = SettingsPage(
             self.config.dark_mode,
             self.config.auto_interval_min,
@@ -94,6 +96,7 @@ class HealerApp(Gtk.Window):
         )
         self.stack.add_named(self.dashboard, "dashboard")
         self.stack.add_named(self.checks_page, "checks")
+        self.stack.add_named(self.swarm_page, "swarm")
         self.stack.add_named(self.settings_page, "settings")
         self.stack.set_visible_child_name("dashboard")
 
@@ -162,6 +165,7 @@ class HealerApp(Gtk.Window):
         for page, label in [
             ("dashboard", "📊  Genel Bakış"),
             ("checks", "🩺  Kontroller"),
+            ("swarm", "🌐  Filo Yönetimi"),
             ("settings", "⚙️  Ayarlar"),
         ]:
             btn = Gtk.Button(label=label)

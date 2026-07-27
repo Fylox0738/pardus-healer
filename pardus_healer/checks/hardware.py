@@ -76,3 +76,41 @@ class BatteryHealthCheck(BaseCheck):
             return int(text.strip())
         except ValueError:
             return None
+
+class SmartDiskCheck(BaseCheck):
+    id = "smart_disk"
+    title = "S.M.A.R.T. Disk Sağlığı"
+    icon = "💽"
+    category = "Donanım"
+    weight = 1.0
+
+    def run(self):
+        import shutil
+        import subprocess
+        
+        if not shutil.which("smartctl"):
+            return self.info(
+                "Disk sağlığı okunamadı (smartctl eksik).",
+                detail="Erken donanım uyarısı için smartmontools paketini kurun."
+            )
+            
+        try:
+            # Sadece kök (root) veya sudo izinleriyle çalışır, 
+            # pkexec istemeyiz çünkü tarama anında parola sorsun istemiyoruz.
+            # Eger root degilse hata verir, biz bunu algılayıp pass geçebiliriz.
+            result = subprocess.run(["smartctl", "-H", "/dev/sda"], capture_output=True, text=True, timeout=2)
+            out = result.stdout
+            
+            if result.returncode == 0 or "PASSED" in out:
+                return self.ok("S.M.A.R.T. disk sağlığı: PASSED (İyi durumda)")
+            elif "FAILED" in out:
+                return self.fail(
+                    "S.M.A.R.T. Uyarısı: Disk arızası tespit edildi!",
+                    detail="Diskiniz fiziksel olarak ömrünü dolduruyor olabilir.",
+                    root_cause="Donanım (Disk) yaşlanması veya fiziksel hasar.",
+                    recommendation="ACİLEN VERİLERİNİZİ YEDEKLEYİN. Diski yenisiyle değiştirin."
+                )
+            else:
+                return self.info("Disk sağlığı verisi root yetkisi gerektirebilir.")
+        except Exception as e:
+            return self.info(f"Disk sağlığı taraması başarısız: {e}")
