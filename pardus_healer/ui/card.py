@@ -178,9 +178,21 @@ class DiagnosticCard(Gtk.Box):
 
     def _run_fix(self, fix: Fix) -> None:
         try:
+            import shlex
+            cmd = fix.resolved_command()
+            cmd_list = shlex.split(cmd)
+            
+            # pkexec güvenle kaldırılıyor (daemon.py ile tutarlı)
+            if cmd_list and cmd_list[0] == "pkexec":
+                cmd_list = cmd_list[1:]
+            
+            if not cmd_list:
+                GLib.idle_add(self.log_callback, "Hata: Boş komut\n")
+                return
+            
             proc = subprocess.Popen(
-                fix.resolved_command(),
-                shell=True,
+                cmd_list,
+                shell=False,  # Command Injection koruması - shell=True YASAK
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Pardus Healer Kalkanı (Tray)
+Comment=Pardus Healer arka plan sistem tepsisi izleyicisi
+Exec=/usr/bin/python3 /opt/pardus-suite/run.py --tray
+Icon=security-high
+Terminal=false
+Type=Application
+Categories=System;Security;
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

@@ -28,6 +28,7 @@ from .dashboard import Dashboard
 from .settings_page import SettingsPage
 from .sos_dialog import SosDialog
 from .welcome import WelcomeDialog
+from .swarm_page import SwarmPage
 
 
 class HealerApp(Gtk.Window):
@@ -83,6 +84,7 @@ class HealerApp(Gtk.Window):
             report_callback=self.generate_report,
             fix_all_callback=self.fix_all,
         )
+        self.swarm_page = SwarmPage()
         self.settings_page = SettingsPage(
             self.config.dark_mode,
             self.config.auto_interval_min,
@@ -94,6 +96,7 @@ class HealerApp(Gtk.Window):
         )
         self.stack.add_named(self.dashboard, "dashboard")
         self.stack.add_named(self.checks_page, "checks")
+        self.stack.add_named(self.swarm_page, "swarm")
         self.stack.add_named(self.settings_page, "settings")
         self.stack.set_visible_child_name("dashboard")
 
@@ -162,6 +165,7 @@ class HealerApp(Gtk.Window):
         for page, label in [
             ("dashboard", "📊  Genel Bakış"),
             ("checks", "🩺  Kontroller"),
+            ("swarm", "🌐  Filo Yönetimi"),
             ("settings", "⚙️  Ayarlar"),
         ]:
             btn = Gtk.Button(label=label)
@@ -370,9 +374,21 @@ class HealerApp(Gtk.Window):
             ctx.add_class("sidebar-btn-active" if name == page else "sidebar-btn")
 
     def _fix_worker(self, fix: Fix):
+        import shlex
+        import shutil
         try:
+            if shutil.which("timeshift"):
+                GLib.idle_add(self.checks_page.log, "Güvenlik yedeği alınıyor (Timeshift)...")
+                subprocess.run(
+                    ["pkexec", "timeshift", "--create", "--comments", "Pardus Healer Pre-Fix"],
+                    shell=False, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+            
+            cmd = fix.resolved_command()
+            cmd_list = shlex.split(cmd)
+            
             proc = subprocess.Popen(
-                fix.resolved_command(), shell=True,
+                cmd_list, shell=False,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
             )
             assert proc.stdout is not None
@@ -434,14 +450,26 @@ class HealerApp(Gtk.Window):
         ).start()
 
     def _fix_all_worker(self, pending):
+        import shlex
+        import shutil
+        
+        if shutil.which("timeshift"):
+            GLib.idle_add(self.checks_page.log, "Toplu onarım öncesi güvenlik yedeği alınıyor (Timeshift)...")
+            subprocess.run(
+                ["pkexec", "timeshift", "--create", "--comments", "Pardus Healer Pre-Fix"],
+                shell=False, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            
         for idx, (title, fix) in enumerate(pending, start=1):
+            cmd = fix.resolved_command()
+            cmd_list = shlex.split(cmd)
             GLib.idle_add(
                 self.checks_page.log,
-                f"\n──▶ [{idx}/{len(pending)}] {title}: {fix.command}",
+                f"\n──▶ [{idx}/{len(pending)}] {title}: {cmd_list}",
             )
             try:
                 proc = subprocess.Popen(
-                    fix.resolved_command(), shell=True,
+                    cmd_list, shell=False,
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                 )
                 assert proc.stdout is not None

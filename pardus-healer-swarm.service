@@ -1,0 +1,15 @@
+[Unit]
+Description=Pardus Healer Filo (Swarm) Düğüm Servisi
+After=network.target
+
+[Service]
+Type=simple
+User=root
+# Uygulama yolu
+ExecStart=/usr/bin/python3 /opt/pardus-suite/run.py --server
+Restart=on-failure
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

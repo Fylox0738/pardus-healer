@@ -1,0 +1,16 @@
+Source: pardus-healer
+Section: utils
+Priority: optional
+Maintainer: Pardus Geliştiricisi <info@pardus.org.tr>
+Build-Depends: debhelper (>= 11)
+Standards-Version: 4.6.2
+Homepage: https://github.com/Fylox0738/pardus-healer
+
+Package: pardus-healer
+Architecture: all
+Depends: ${misc:Depends}, python3, python3-gi, python3-gi-cairo, gir1.2-gtk-3.0, gir1.2-appindicator3-0.1, policykit-1, timeshift | btrfs-progs, smartmontools
+Description: Akıllı sistem tanılama ve onarım aracı
+ Pardus Healer, bilgisayarınızı tarar, sorunları tespit eder,
+ sorunların kök nedenini bulur ve tek tıkla onarır.
+ Ayrıca Otonom kalkan, Swarm (Filo) ağı ve donanım erken
+ uyarısı özellikleri içerir.

@@ -1,0 +1,15 @@
+[Unit]
+Description=Pardus Healer Otonom Koruma Kalkanı (Daemon)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+# Uygulama yolu
+ExecStart=/usr/bin/python3 /opt/pardus-suite/run.py --daemon
+Restart=on-failure
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target
