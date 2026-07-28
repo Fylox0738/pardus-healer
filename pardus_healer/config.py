@@ -44,9 +44,11 @@ class Config:
     def save(self) -> None:
         path = _config_path()
         try:
-            os.makedirs(os.path.dirname(path), exist_ok=True)
+            os.makedirs(os.path.dirname(path), exist_ok=True, mode=0o700)
             with open(path, "w", encoding="utf-8") as fh:
                 json.dump(self._data, fh, indent=2)
+            # Güvenlik: Sadece sahip okuyabilsin (sensitive token içerir)
+            os.chmod(path, 0o600)
         except OSError:
             pass
 

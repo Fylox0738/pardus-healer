@@ -46,6 +46,7 @@ class HealerTray:
         self.indicator.set_menu(self.menu)
         
         self.engine = DiagnosisEngine()
+        self._worker_thread = None
         
         # Her 30 dakikada bir arkaplan taraması yapıp ikonu güncelle
         GLib.timeout_add_seconds(1800, self._check_health)
@@ -60,7 +61,11 @@ class HealerTray:
         Gtk.main_quit()
 
     def _check_health(self):
-        threading.Thread(target=self._worker, daemon=True).start()
+        if self._worker_thread and self._worker_thread.is_alive():
+            return True # Önceki tarama bitmemişse üst üste yığma (Thread stacking)
+            
+        self._worker_thread = threading.Thread(target=self._worker, daemon=True)
+        self._worker_thread.start()
         return True
 
     def _worker(self):

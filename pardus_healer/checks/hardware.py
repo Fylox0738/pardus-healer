@@ -98,7 +98,8 @@ class SmartDiskCheck(BaseCheck):
             # Sadece kök (root) veya sudo izinleriyle çalışır, 
             # pkexec istemeyiz çünkü tarama anında parola sorsun istemiyoruz.
             # Eger root degilse hata verir, biz bunu algılayıp pass geçebiliriz.
-            result = subprocess.run(["smartctl", "-H", "/dev/sda"], capture_output=True, text=True, timeout=2)
+            disk_path = "/dev/nvme0n1" if os.path.exists("/dev/nvme0n1") else "/dev/sda"
+            result = subprocess.run(["smartctl", "-H", disk_path], capture_output=True, text=True, timeout=2)
             out = result.stdout
             
             if result.returncode == 0 or "PASSED" in out:

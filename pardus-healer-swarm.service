@@ -7,8 +7,9 @@ Type=simple
 User=root
 # Uygulama yolu
 ExecStart=/usr/bin/python3 /opt/pardus-suite/run.py --server
-Restart=always
-RestartSec=30
+Restart=on-failure
+StartLimitIntervalSec=300
+StartLimitBurst=5
 
 [Install]
 WantedBy=multi-user.target

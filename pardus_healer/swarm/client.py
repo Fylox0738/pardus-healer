@@ -61,9 +61,13 @@ def get_node_health(ip: str, port: str = "4243") -> Dict[str, Any] | None:
     url = f"http://{ip}:{port}/health"
     try:
         from pardus_healer.config import Config
+        from pardus_healer.swarm.auth import generate_auth_headers
         token = Config().swarm_token
         req = urllib.request.Request(url, method="GET")
-        req.add_header('X-Healer-Token', token)
+        
+        auth_headers = generate_auth_headers(token)
+        for k, v in auth_headers.items():
+            req.add_header(k, v)
         
         with urllib.request.urlopen(req, timeout=5) as response:
             if response.status == 200:
@@ -78,9 +82,13 @@ def heal_node(ip: str, port: str = "4243") -> bool:
     url = f"http://{ip}:{port}/heal_all"
     try:
         from pardus_healer.config import Config
+        from pardus_healer.swarm.auth import generate_auth_headers
         token = Config().swarm_token
         req = urllib.request.Request(url, method="POST")
-        req.add_header('X-Healer-Token', token)
+        
+        auth_headers = generate_auth_headers(token)
+        for k, v in auth_headers.items():
+            req.add_header(k, v)
         
         with urllib.request.urlopen(req, timeout=30) as response:
             if response.status == 200:

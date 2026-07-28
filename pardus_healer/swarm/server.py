@@ -28,13 +28,14 @@ class SwarmHTTPHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/health':
             from pardus_healer.config import Config
+            from pardus_healer.swarm.auth import verify_auth_headers
             expected_token = Config().swarm_token
-            received_token = self.headers.get('X-Healer-Token', '')
             
-            if received_token != expected_token:
+            # Doğrulama: Headers dict-like object
+            if not verify_auth_headers(self.headers, expected_token):
                 self.send_response(403)
                 self.end_headers()
-                self.wfile.write(b"Yetkisiz Erisim. Token Hatali.")
+                self.wfile.write(b"Yetkisiz Erisim veya Gecersiz Imza.")
                 return
 
             try:
@@ -67,14 +68,14 @@ class SwarmHTTPHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == '/heal_all' or self.path.startswith('/heal_node'):
             from pardus_healer.config import Config
+            from pardus_healer.swarm.auth import verify_auth_headers
+            import shlex
             expected_token = Config().swarm_token
-            received_token = self.headers.get('X-Healer-Token', '')
             
-            # Eğer karşı tarafın tokenı eşleşmiyorsa reddet (Sıfır-Güven Güvenliği)
-            if received_token != expected_token:
+            if not verify_auth_headers(self.headers, expected_token):
                 self.send_response(403)
                 self.end_headers()
-                self.wfile.write(b"Yetkisiz Erisim. Token Hatali.")
+                self.wfile.write(b"Yetkisiz Erisim veya Gecersiz Imza.")
                 return
 
             try:
@@ -86,13 +87,18 @@ class SwarmHTTPHandler(BaseHTTPRequestHandler):
                 for issue in issues_to_fix:
                     if issue.fix:
                         cmd = issue.fix.resolved_command()
-                        if cmd.startswith("pkexec "):
-                            cmd = cmd.replace("pkexec ", "", 1)
-                        elif " pkexec " in cmd:
-                            cmd = cmd.replace(" pkexec ", " ", 1)
                         import subprocess
-                        subprocess.run(cmd, shell=True)
-                        fixed_count += 1
+                        import shlex
+                        
+                        cmd_list = shlex.split(cmd)
+                        # pkexec varsa baştan güvenle çıkar
+                        if cmd_list and cmd_list[0] == "pkexec":
+                            cmd_list = cmd_list[1:]
+                            
+                        # shell=False ve cmd_list kullanımı (Command Injection koruması)
+                        if cmd_list:
+                            subprocess.run(cmd_list, shell=False)
+                            fixed_count += 1
                         
                 response_data = {
                     "status": "success",
