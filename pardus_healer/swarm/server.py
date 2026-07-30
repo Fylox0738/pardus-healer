@@ -32,7 +32,7 @@ class SwarmHTTPHandler(BaseHTTPRequestHandler):
             expected_token = Config().swarm_token
             
             # Doğrulama: Headers dict-like object
-            if not verify_auth_headers(self.headers, expected_token):
+            if not verify_auth_headers(self.headers, expected_token, method="GET", path=self.path):
                 self.send_response(403)
                 self.end_headers()
                 self.wfile.write(b"Yetkisiz Erisim veya Gecersiz Imza.")
@@ -69,10 +69,9 @@ class SwarmHTTPHandler(BaseHTTPRequestHandler):
         if self.path == '/heal_all' or self.path.startswith('/heal_node'):
             from pardus_healer.config import Config
             from pardus_healer.swarm.auth import verify_auth_headers
-            import shlex
             expected_token = Config().swarm_token
             
-            if not verify_auth_headers(self.headers, expected_token):
+            if not verify_auth_headers(self.headers, expected_token, method="POST", path=self.path):
                 self.send_response(403)
                 self.end_headers()
                 self.wfile.write(b"Yetkisiz Erisim veya Gecersiz Imza.")
@@ -83,21 +82,13 @@ class SwarmHTTPHandler(BaseHTTPRequestHandler):
                 report = engine.run_all(concurrent=True)
                 issues_to_fix = [r for r in report.results if r.is_actionable and r.status == Status.FAIL]
                 
+                from pardus_healer.core.shell import run_fix_as_root
+
                 fixed_count = 0
                 for issue in issues_to_fix:
                     if issue.fix:
-                        cmd = issue.fix.resolved_command()
-                        import subprocess
-                        import shlex
-                        
-                        cmd_list = shlex.split(cmd)
-                        # pkexec varsa baştan güvenle çıkar
-                        if cmd_list and cmd_list[0] == "pkexec":
-                            cmd_list = cmd_list[1:]
-                            
-                        # shell=False ve cmd_list kullanımı (Command Injection koruması)
-                        if cmd_list:
-                            subprocess.run(cmd_list, shell=False)
+                        result = run_fix_as_root(issue.fix.resolved_command())
+                        if result.ok:
                             fixed_count += 1
                         
                 response_data = {

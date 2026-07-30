@@ -64,8 +64,8 @@ def get_node_health(ip: str, port: str = "4243") -> Dict[str, Any] | None:
         from pardus_healer.swarm.auth import generate_auth_headers
         token = Config().swarm_token
         req = urllib.request.Request(url, method="GET")
-        
-        auth_headers = generate_auth_headers(token)
+
+        auth_headers = generate_auth_headers(token, method="GET", path="/health")
         for k, v in auth_headers.items():
             req.add_header(k, v)
         
@@ -85,8 +85,8 @@ def heal_node(ip: str, port: str = "4243") -> bool:
         from pardus_healer.swarm.auth import generate_auth_headers
         token = Config().swarm_token
         req = urllib.request.Request(url, method="POST")
-        
-        auth_headers = generate_auth_headers(token)
+
+        auth_headers = generate_auth_headers(token, method="POST", path="/heal_all")
         for k, v in auth_headers.items():
             req.add_header(k, v)
         

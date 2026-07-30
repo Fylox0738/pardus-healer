@@ -11,10 +11,13 @@
     <message>Sistem onarımı için yetki gerekiyor</message>
     <message xml:lang="tr">Pardus Healer sisteminizi onarmak için yetki istiyor.</message>
     <defaults>
-      <!-- Kullanıcı aktif (yerel) oturumdaysa parola sormadan izin ver (Native hissi için) -->
+      <!-- Aktif oturumdaki kullanıcı da parola/yönetici doğrulaması yapmalı.
+           "allow_active=yes" HERHANGİ bir yerel kullanıcının (admin olması
+           gerekmeden) parolasız root komut çalıştırmasına izin verirdi —
+           bkz. TECHNICAL_AUDIT.md Kol 2, madde 1. -->
       <allow_any>auth_admin</allow_any>
       <allow_inactive>auth_admin</allow_inactive>
-      <allow_active>yes</allow_active>
+      <allow_active>auth_admin</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/opt/pardus-suite/run.py</annotate>
     <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>

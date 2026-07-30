@@ -7,24 +7,38 @@ otomatik olarak düzeltir (Self-Healing) ve masaüstüne bildirim gönderir.
 
 from __future__ import annotations
 
+import os
 import time
 import subprocess
-import shlex
 import logging
 import gc
 from pardus_healer.core.engine import DiagnosisEngine
 from pardus_healer.core.models import Status
 from pardus_healer.core import notify
+from pardus_healer.core import shell
 
 # Sadece root altında çalışması planlanır.
 # `journalctl -u pardus-healer-daemon` ile loglar izlenebilir.
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - HEALER_DAEMON - %(message)s")
 
+# Eskiden yalnızca 4 süreç adı kontrol ediliyordu ve bunlardan ikisi
+# ("impress", "loimpress") gerçekte hiç eşleşmiyordu — LibreOffice Impress
+# çalışırken görünen gerçek süreç adı "soffice.bin"dir, "impress"/
+# "loimpress" yalnızca başlatıcı betik adlarıdır (bkz. TECHNICAL_AUDIT.md).
+# Liste ayrıca PDF/sunum görüntüleyiciler ve video konferans araçlarını
+# kapsayacak şekilde genişletildi.
+_PRESENTATION_PROCESSES = [
+    'soffice.bin', 'impress', 'loimpress',
+    'okular', 'evince',
+    'vlc', 'mpv', 'totem',
+    'zoom', 'teams',
+]
+
 def is_presentation_mode_active() -> bool:
     """Ekrandaki aktif pencerenin tam ekran bir sunum veya medya oynatıcı olup olmadığını kontrol eder."""
     try:
         # Sunum programlarını iteratif kontrol et
-        for prog in ['impress', 'loimpress', 'okular', 'vlc']:
+        for prog in _PRESENTATION_PROCESSES:
             try:
                 output = subprocess.check_output(['pgrep', '-x', prog], text=True)
                 if output.strip():
@@ -50,11 +64,42 @@ def clear_watchdog():
     """Watchdog işaretini temizler (Sistem sağlıklı)."""
     subprocess.run(['rm', '-f', '/var/run/healer_watchdog_active'], shell=False)
 
+def check_and_clear_watchdog():
+    """Daemon başlarken önceki oturumdan kalan watchdog işaretini denetler.
+
+    Eskiden bu işaret hiç OKUNMADAN, doğrudan silinirdi — yani "watchdog"un
+    iddia ettiği "çökmeye karşı geri dönüş sigortası" hiçbir zaman devreye
+    girmiyordu (bkz. TECHNICAL_AUDIT.md). Dosya hâlâ varsa, bir önceki
+    otonom onarım turu clear_watchdog()'a ulaşamadan kesilmiş demektir
+    (beklenmedik çökme/elektrik kesintisi/kernel panic) — bu durumda
+    kullanıcı bilgilendirilir.
+    """
+    flag = "/var/run/healer_watchdog_active"
+    if os.path.exists(flag):
+        logging.warning(
+            "Watchdog işareti aktif bulundu: önceki otonom onarım turu "
+            "yarım kalmış olabilir (beklenmedik çökme/elektrik kesintisi)."
+        )
+        try:
+            active_user = "pardus"
+            who_output = subprocess.check_output(['who'], text=True).splitlines()
+            if who_output:
+                active_user = who_output[0].split()[0]
+            subprocess.run(
+                ['su', '-', active_user, '-c',
+                 'notify-send "⚠️ Pardus Healer Kalkanı" '
+                 '"Önceki otonom onarım yarım kalmış olabilir, sisteminizi '
+                 'kontrol edin." -u critical'],
+                capture_output=True, shell=False,
+            )
+        except Exception as e:
+            logging.error(f"Watchdog kurtarma bildirimi gönderilemedi: {e}")
+    clear_watchdog()
+
 def run_daemon(interval_seconds: int = 600):
     logging.info("Otonom Koruma Kalkanı (Pardus Healer Daemon) başlatıldı.")
-    
-    # Watchdog temizliği (Sistem sorunsuz başladıysa)
-    clear_watchdog()
+
+    check_and_clear_watchdog()
 
     while True:
         try:
@@ -83,23 +128,13 @@ def run_daemon(interval_seconds: int = 600):
                         
                     for issue in issues_to_fix:
                         if issue.fix:
-                            cmd = issue.fix.resolved_command()
-                            cmd_list = shlex.split(cmd)
-                            
-                            # pkexec güvenle kaldırılıyor
-                            if cmd_list and cmd_list[0] == "pkexec":
-                                cmd_list = cmd_list[1:]
-                                
-                            logging.info(f"Onarılıyor: {issue.title} -> {cmd_list}")
-                            
-                            if cmd_list:
-                                result = subprocess.run(cmd_list, shell=False, capture_output=True, text=True)
-                                
-                                if result.returncode == 0:
-                                    fixed_count += 1
-                                    logging.info(f"Başarılı: {issue.title}")
-                                else:
-                                    logging.error(f"Onarım başarısız: {issue.title} (Hata: {result.stderr.strip()})")
+                            logging.info(f"Onarılıyor: {issue.title}")
+                            result = shell.run_fix_as_root(issue.fix.resolved_command())
+                            if result.ok:
+                                fixed_count += 1
+                                logging.info(f"Başarılı: {issue.title}")
+                            else:
+                                logging.error(f"Onarım başarısız: {issue.title} (Hata: {result.stderr.strip()})")
                                     
                     clear_watchdog() # Tüm onarımlar bitti, sigortayı kaldır
                     

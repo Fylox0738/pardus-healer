@@ -4,13 +4,19 @@ import hashlib
 import secrets
 import threading
 
-def generate_auth_headers(token: str) -> dict:
-    """Replay-attack korumalı kimlik doğrulama başlıkları üretir."""
+def generate_auth_headers(token: str, method: str = "GET", path: str = "/") -> dict:
+    """Replay-attack korumalı kimlik doğrulama başlıkları üretir.
+
+    İmza artık ``method``+``path``'i de kapsıyor (eskiden yalnızca
+    timestamp:nonce imzalanıyordu). Bu olmadan, GET /health için üretilmiş
+    geçerli bir imza — nonce'u tüketilmeden önce — POST /heal_all gibi
+    başka bir uç noktaya karşı da kullanılabilirdi (cross-endpoint replay,
+    bkz. TECHNICAL_AUDIT.md).
+    """
     timestamp = str(int(time.time()))
     nonce = secrets.token_hex(16)  # 16 byte -> daha güçlü nonce
-    
-    # İmzalanacak mesaj: timestamp:nonce
-    message = f"{timestamp}:{nonce}".encode('utf-8')
+
+    message = f"{method.upper()}:{path}:{timestamp}:{nonce}".encode('utf-8')
     secret = token.encode('utf-8')
     
     signature = hmac.new(secret, message, digestmod=hashlib.sha256).hexdigest()
@@ -24,16 +30,28 @@ def generate_auth_headers(token: str) -> dict:
 _used_nonces: dict = {}
 _used_nonces_lock = threading.Lock()  # Thread-safe nonce erişimi için
 
-def verify_auth_headers(headers: dict, expected_token: str, max_age_seconds: int = 60) -> bool:
-    """Sunucu tarafında gelen başlıkları (HMAC, Timestamp, Nonce) doğrular."""
+def verify_auth_headers(
+    headers: dict,
+    expected_token: str,
+    method: str = "GET",
+    path: str = "/",
+    max_age_seconds: int = 60,
+) -> bool:
+    """Sunucu tarafında gelen başlıkları (HMAC, Timestamp, Nonce) doğrular.
+
+    ``method``/``path`` istemcinin imzaladığı uç noktayla birebir aynı
+    olmalı — aksi halde bir uç nokta için üretilmiş geçerli bir imza
+    başka bir uç noktaya karşı yeniden kullanılabilir (bkz. auth.py
+    ``generate_auth_headers`` docstring'i).
+    """
     global _used_nonces
     timestamp = headers.get('X-Healer-Timestamp')
     nonce = headers.get('X-Healer-Nonce')
     signature = headers.get('X-Healer-Signature')
-    
+
     if not timestamp or not nonce or not signature:
         return False
-        
+
     try:
         ts_int = int(timestamp)
         now = int(time.time())
@@ -41,8 +59,8 @@ def verify_auth_headers(headers: dict, expected_token: str, max_age_seconds: int
             return False
     except ValueError:
         return False
-    
-    message = f"{timestamp}:{nonce}".encode('utf-8')
+
+    message = f"{method.upper()}:{path}:{timestamp}:{nonce}".encode('utf-8')
     secret = expected_token.encode('utf-8')
     
     expected_signature = hmac.new(secret, message, digestmod=hashlib.sha256).hexdigest()

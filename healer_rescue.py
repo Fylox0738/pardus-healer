@@ -4,10 +4,37 @@ import re
 import subprocess
 import sys
 
+# TTY kurtarma senaryosunda yerel ayar çoğu zaman minimaldir (LANG=C) ve
+# emoji/Unicode karakterler kodlanamaz. Son çare bir kurtarma aracı bir
+# print() yüzünden ASLA çökmemeli — kodlanamayan karakter "?" ile
+# değiştirilip devam edilir.
+try:
+    sys.stdout.reconfigure(errors="replace")
+    sys.stderr.reconfigure(errors="replace")
+except AttributeError:  # çok eski Python — en kötü ihtimalle eski davranış
+    pass
+
 # Pardus/Debian paket adlarıyla eşleşen katı bir kalıp — bunun dışındaki
 # hiçbir token argv'ye eklenmez (apt geçmişindeki serbest metinden gelen
 # tokenlerin komut satırına kaçak bayrak/enjeksiyon olarak sızmasını önler).
 _PACKAGE_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9+.\-:]*$")
+
+# Rescue modu son çare aracıdır ve TTY/siyah ekran durumunda kullanılır —
+# yanlışlıkla bu paketlerden birinin "kaldır" (remove) olarak geri
+# alınmasını önermek sistemi tamamen önyüklenemez hale getirebilir (bkz.
+# TECHNICAL_AUDIT.md). Bu paketleri içeren "kurulum" işlemleri geri alma
+# listesine hiç eklenmez.
+_PROTECTED_PREFIXES = (
+    "linux-image", "linux-headers", "linux-modules", "linux-firmware",
+    "systemd", "dbus", "dpkg", "apt", "libc6", "bash", "coreutils",
+    "udev", "init", "network-manager", "grub-pc", "grub-common",
+    "grub-efi", "grub2-common", "pardus-healer",
+)
+
+
+def _is_protected(pkg: str) -> bool:
+    low = pkg.lower()
+    return any(low.startswith(p) for p in _PROTECTED_PREFIXES)
 
 def print_banner():
     print("=" * 65)
@@ -16,8 +43,7 @@ def print_banner():
     print("Grafik arayüzün (GUI) çöktüğü siyah ekran (TTY) durumlarında,")
     print("sistemi komut satırından onarmanızı sağlar. (Linux Ctrl+Z)\n")
 
-def parse_history():
-    history_file = "/var/log/apt/history.log"
+def parse_history(history_file: str = "/var/log/apt/history.log"):
     if not os.path.exists(history_file):
         print("ℹ️ APT History dosyası bulunamadı.")
         return []
@@ -53,6 +79,10 @@ def parse_history():
                 if "install" in cmd:
                     raw = [w for w in cmd.split() if w not in ["apt", "apt-get", "install", "-y", "sudo", "pkexec"]]
                     packages = [w for w in raw if _PACKAGE_NAME_RE.match(w)]
+                    # Temel sistem paketlerini "remove" geri alma önerisinden
+                    # çıkar (ör. bir işlemde çekirdek/systemd bir yan paketle
+                    # birlikte kurulmuş olabilir; hepsini kaldırmak riskli).
+                    packages = [w for w in packages if not _is_protected(w)]
                     if packages:
                         revert_action = "remove"
                         action_name = f"Kurulum: {' '.join(packages)}"
@@ -108,10 +138,26 @@ def main():
         if 0 <= idx < len(actions) and idx < 10:
             target_action = actions[idx]
             argv = ["apt-get", target_action["revert_action"], "-y", "--"] + target_action["packages"]
+            # apt-get'in kendi kuru-çalıştırma bayrağı (-s): hiçbir paketi
+            # gerçekten kaldırmadan/kurmadan ne olacağını gösterir. Son çare
+            # bir kurtarma aracında "önce gör, sonra uygula" seçeneği şarttır
+            # (bkz. TECHNICAL_AUDIT.md, healer_rescue bulgusu).
+            sim_argv = ["apt-get", target_action["revert_action"], "-s", "--"] + target_action["packages"]
             if os.geteuid() != 0:
                 argv = ["sudo"] + argv
+                sim_argv = ["sudo"] + sim_argv
             print(f"\n⚡ Seçilen İşlem TERSİNE Çevriliyor: {' '.join(argv)}")
-            confirm = input("Sistemi kurtarmaya emin misiniz? (E/H): ").strip().lower()
+            confirm = input(
+                "Sistemi kurtarmaya emin misiniz? "
+                "(E: evet / H: hayır / S: önce simülasyon): "
+            ).strip().lower()
+            if confirm == 's':
+                print("\n────────── SİMÜLASYON (hiçbir şey değişmez) ──────────")
+                subprocess.run(sim_argv, shell=False)
+                print("──────────────── SİMÜLASYON SONU ─────────────────────")
+                confirm = input(
+                    "Simülasyon yukarıda. Şimdi GERÇEKTEN uygulansın mı? (E/H): "
+                ).strip().lower()
             if confirm == 'e':
                 print("\n================== KURTARMA BAŞLIYOR ==================")
                 # shell=True KULLANILMIYOR: apt geçmişinden gelen paket adları
