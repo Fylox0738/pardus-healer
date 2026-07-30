@@ -12,7 +12,7 @@ from gi.repository import GLib, Gtk  # noqa: E402
 from . import theme
 
 # Not renkleri artık theme.py'deki tek kaynaktan türetiliyor (bkz.
-# TECHNICAL_AUDIT.md — aynı palet burada ve dashboard.py'de bağımsız
+# — aynı palet burada ve dashboard.py'de bağımsız
 # tanımlıydı).
 _GRADE_RGB = {k: theme.hex_to_rgb_float(v) for k, v in theme.GRADE_HEX.items()}
 

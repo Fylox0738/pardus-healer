@@ -139,7 +139,7 @@ class HealerApp(Gtk.Window):
         """Görev çubuğu/Alt-Tab/pencere değiştiricide gösterilecek ikon.
 
         Bu olmadan pencere jenerik bir GTK/Python ikonuyla görünür — bkz.
-        TECHNICAL_AUDIT.md Kol 3 (marka tutarlılığı, en görünür bulgu).
+ Kol 3 (marka tutarlılığı, en görünür bulgu).
         Hem geliştirme ağacından hem kurulu (/usr/share) konumdan dener.
         """
         candidates = [
@@ -474,7 +474,7 @@ class HealerApp(Gtk.Window):
             returncode = run_fix_command(cmd, self.checks_page.log)
             # Çıkış koduna bakılmaksızın her zaman ✓ gösteriliyordu — pkexec
             # reddi/başarısız bir komut de "tamamlandı" gibi yanıltıcı
-            # görünüyordu (bkz. TECHNICAL_AUDIT.md). Artık gerçek sonucu
+            # görünüyordu. Artık gerçek sonucu
             # yansıtıyor.
             mark = "✓" if returncode == 0 else "✗"
             GLib.idle_add(

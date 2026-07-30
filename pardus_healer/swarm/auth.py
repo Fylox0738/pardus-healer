@@ -11,7 +11,6 @@ def generate_auth_headers(token: str, method: str = "GET", path: str = "/") -> d
     timestamp:nonce imzalanıyordu). Bu olmadan, GET /health için üretilmiş
     geçerli bir imza — nonce'u tüketilmeden önce — POST /heal_all gibi
     başka bir uç noktaya karşı da kullanılabilirdi (cross-endpoint replay,
-    bkz. TECHNICAL_AUDIT.md).
     """
     timestamp = str(int(time.time()))
     nonce = secrets.token_hex(16)  # 16 byte -> daha güçlü nonce

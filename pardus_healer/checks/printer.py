@@ -1,7 +1,7 @@
 """Yazıcı (CUPS) tanı kontrolü.
 
 Pardus forumlarında en sık tekrarlanan gerçek şikayetlerden biri
-"yazıcım çalışmıyor" sınıfıdır (bkz. DEVELOPMENT_OPPORTUNITIES.md #2).
+"yazıcım çalışmıyor" sınıfıdır.
 CUPS servisinin durumunu ve tanımlı yazıcıların durumunu kontrol eder.
 """
 

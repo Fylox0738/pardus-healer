@@ -1,6 +1,6 @@
 """BaseCheck fix-sentinel regresyon testleri.
 
-TECHNICAL_AUDIT.md Kol 1 bulgusu: ok()/info()/unknown() içindeki
+ Kol 1 bulgusu: ok()/info()/unknown() içindeki
 ``fix=None`` sıfırlaması, ``None`` ile "hiç verilmedi" ayrımı yapılamadığı
 için çalışmıyordu; ``default_fix`` tanımlı bir kontrolde OK durumunda bile
 "Düzelt" butonu geri gelebiliyordu. ``_UNSET`` sentineli bunu çözdü.

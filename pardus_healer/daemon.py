@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - HEALER_DAEMON - %(
 # Eskiden yalnızca 4 süreç adı kontrol ediliyordu ve bunlardan ikisi
 # ("impress", "loimpress") gerçekte hiç eşleşmiyordu — LibreOffice Impress
 # çalışırken görünen gerçek süreç adı "soffice.bin"dir, "impress"/
-# "loimpress" yalnızca başlatıcı betik adlarıdır (bkz. TECHNICAL_AUDIT.md).
+# "loimpress" yalnızca başlatıcı betik adlarıdır.
 # Liste ayrıca PDF/sunum görüntüleyiciler ve video konferans araçlarını
 # kapsayacak şekilde genişletildi.
 _PRESENTATION_PROCESSES = [
@@ -69,7 +69,7 @@ def check_and_clear_watchdog():
 
     Eskiden bu işaret hiç OKUNMADAN, doğrudan silinirdi — yani "watchdog"un
     iddia ettiği "çökmeye karşı geri dönüş sigortası" hiçbir zaman devreye
-    girmiyordu (bkz. TECHNICAL_AUDIT.md). Dosya hâlâ varsa, bir önceki
+    girmiyordu. Dosya hâlâ varsa, bir önceki
     otonom onarım turu clear_watchdog()'a ulaşamadan kesilmiş demektir
     (beklenmedik çökme/elektrik kesintisi/kernel panic) — bu durumda
     kullanıcı bilgilendirilir.

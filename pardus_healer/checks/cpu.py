@@ -89,7 +89,7 @@ class CpuTempCheck(BaseCheck):
     # dikkate alıyoruz. Eskiden ÇIKTIDAKİ TÜM "°C" değerlerinin maksimumu
     # alınıyordu — bu, sistemde nvme/GPU/anakart sıcaklık sensörü varsa
     # "CPU sıcaklığı" olarak yanlış bir bileşenin (ör. ısınan bir SSD/GPU)
-    # değerini raporlayabiliyordu (bkz. TECHNICAL_AUDIT.md).
+    # değerini raporlayabiliyordu.
     _CPU_CHIP_HINTS = ("coretemp", "k10temp", "zenpower", "cpu_thermal")
     _CPU_LABEL_HINTS = ("package", "tdie", "tctl", "core")
 

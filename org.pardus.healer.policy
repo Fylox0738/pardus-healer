@@ -14,7 +14,6 @@
       <!-- Aktif oturumdaki kullanıcı da parola/yönetici doğrulaması yapmalı.
            "allow_active=yes" HERHANGİ bir yerel kullanıcının (admin olması
            gerekmeden) parolasız root komut çalıştırmasına izin verirdi —
-           bkz. TECHNICAL_AUDIT.md Kol 2, madde 1. -->
       <allow_any>auth_admin</allow_any>
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin</allow_active>

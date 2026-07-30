@@ -40,7 +40,7 @@ class SwarmPage(Gtk.Box):
         # üretiliyordu; hiçbir arayüz onu göstermiyor/eşleştirmiyordu.
         # Sonuç: filodaki cihazlar birbirini asla doğrulayamıyordu (403) —
         # özellik arayüz düzeyinde fiilen çalışamaz durumdaydı (bkz.
-        # TECHNICAL_AUDIT.md / DEVELOPMENT_OPPORTUNITIES.md).
+        # /).
         self._config = Config()
         token_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         token_lbl = Gtk.Label(label="Ağ Anahtarı:")

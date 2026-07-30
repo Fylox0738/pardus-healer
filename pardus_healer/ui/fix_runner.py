@@ -3,8 +3,8 @@
 ``pkexec ...`` biçimindeki bir ``Fix.command``'ı ``shell=False`` ile
 çalıştırıp çıktısını satır satır (ana GTK thread'ine ``GLib.idle_add`` ile)
 akıtan mantık; eskiden ``ui/card.py`` ve ``ui/app.py`` içindeki iki ayrı
-worker'da neredeyse birebir kopyalanmıştı (bkz. TECHNICAL_AUDIT.md Kol 3,
-FIX_DECISION_MATRIX.md P2 madde 21). Üç kopyadan biri güncellenip
+worker'da neredeyse birebir kopyalanmıştı (
+ P2 madde 21). Üç kopyadan biri güncellenip
 diğerlerinin unutulması riskini (tam da card.py'deki pkexec-silme hatasının
 başına geldiği gibi) ortadan kaldırmak için tek yerde toplanmıştır.
 """

@@ -45,7 +45,6 @@ def run(
     args : liste (tercih edilen). String verilirse ``shlex.split`` ile
     argv listesine çevrilir — ``shell=True`` HİÇBİR koşulda kullanılmaz
     (geçmişte bir komut enjeksiyonu açığı tam bu yüzden oluşmuştu,
-    bkz. CLAUDE.md / commit 4122204).
     Hiçbir zaman exception fırlatmaz; her durumu CmdResult ile bildirir.
     """
     if isinstance(args, str):
@@ -133,7 +132,7 @@ def run_fix_as_root(command: str, timeout: int = 60) -> CmdResult:
     bırakılırsa parola penceresi açmaya çalışıp arka planda takılır kalır).
 
     Bu mantık önceden daemon.py ve swarm/server.py'de birbirinden bağımsız
-    olarak kopyalanmıştı (bkz. TECHNICAL_AUDIT.md). Kartın (ui/card.py)
+    olarak kopyalanmıştı. Kartın (ui/card.py)
     "Düzelt" butonu BUNU kullanmaz — o normal kullanıcı oturumunda çalışır
     ve pkexec'i BİLEREK korur.
     """

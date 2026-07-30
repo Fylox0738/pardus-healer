@@ -26,7 +26,7 @@ class DiskSpaceCheck(BaseCheck):
 
     # Yalnızca "/" kontrol ediliyordu — okul/kurum kurulumlarında sık
     # görülen ayrı "/home" bölümü doluysa (kök diskte hâlâ bolca yer varken)
-    # bu tamamen kaçırılıyordu (bkz. TECHNICAL_AUDIT.md). "/home" ayrı bir
+    # bu tamamen kaçırılıyordu. "/home" ayrı bir
     # bölüm değilse (aynı dosya sistemini paylaşıyorsa) tekilleştirilip
     # yalnızca bir kez raporlanır.
     MOUNTS_TO_CHECK = ["/", "/home"]

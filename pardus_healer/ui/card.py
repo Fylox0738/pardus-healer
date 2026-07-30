@@ -94,9 +94,8 @@ class DiagnosticCard(Gtk.Box):
         self._header_event.set_visible_window(False)
         self._header_event.add(header)
         self._header_event.connect("button-press-event", self._on_header_click)
-        # Klavye erişimi: yalnızca fare ile açılabiliyordu (bkz.
-        # TECHNICAL_AUDIT.md) — artık Tab ile odaklanıp Enter/Boşluk ile
-        # açılıp kapanabiliyor.
+        # Klavye erişimi: yalnızca fare ile açılabiliyordu; artık Tab ile
+        # odaklanıp Enter/Boşluk ile açılıp kapanabiliyor.
         self._header_event.set_can_focus(True)
         self._header_event.connect("key-press-event", self._on_header_key)
         self.pack_start(self._header_event, False, False, 0)
@@ -195,7 +194,7 @@ class DiagnosticCard(Gtk.Box):
         # kullanıcı oturumunda çalışır; daemon.py/swarm/server.py zaten
         # root olarak çalıştığı için orada pkexec'in kaldırılması doğrudur,
         # ama burada kaldırmak "Düzelt" butonunu yetkisiz/başarısız hale
-        # getirir (bkz. TECHNICAL_AUDIT.md Kol 2, madde 3).
+        # getirir.
         try:
             run_fix_command(fix.resolved_command(), self.log_callback)
         finally:

@@ -1,6 +1,6 @@
 """Healer Rescue apt geçmişi ayrıştırma testleri.
 
-TECHNICAL_AUDIT.md Kol 2 bulgusu: kurtarma aracı temel sistem paketlerini
+ Kol 2 bulgusu: kurtarma aracı temel sistem paketlerini
 (çekirdek, systemd, grub...) geri alma listesine ekleyebiliyor ve apt
 geçmişindeki serbest metin, komut satırına süzülmeden aktarılıyordu.
 Bu testler koruma listesi + paket adı regex filtresinin çalıştığını doğrular.

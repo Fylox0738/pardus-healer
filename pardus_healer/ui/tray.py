@@ -19,7 +19,7 @@ from pardus_healer.core.models import Status
 from pardus_healer.ui.main_entry import launch
 
 # Görev çubuğu jenerik sistem ikonları (security-high/medium/low) kullanıyordu
-# — marka taşımıyordu (bkz. TECHNICAL_AUDIT.md). Artık gerçek Healer ikonu
+# — marka taşımıyordu. Artık gerçek Healer ikonu
 # kullanılıyor; durum, ikon yerine menü metninde iletiliyor.
 _ASSETS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),

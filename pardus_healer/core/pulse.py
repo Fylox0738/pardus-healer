@@ -12,7 +12,7 @@ yalnızca demo/jüri sunumu için örnek (uydurma) satırlar ekler.
 Demo veri, gerçek kullanıcı verisiyle KARIŞMAMASI için ayrı bir dosyada
 (`pulse_demo.jsonl`) saklanır ve `load_events()`/`top_issues()` her demo
 kaydını `is_demo=True` ile işaretler — böylece arayüz ikisini hiçbir zaman
-ayrım yapmadan tek bir sayıya karıştırmaz (bkz. TECHNICAL_AUDIT.md).
+ayrım yapmadan tek bir sayıya karıştırmaz.
 """
 
 from __future__ import annotations
@@ -111,7 +111,7 @@ def seed_demo_data() -> int:
     """Demo/jüri sunumu için örnek (uydurma, anonim) bölgesel veri ekler.
 
     Bu veri gerçek kullanıcı verisiyle AYNI dosyaya değil, ayrı bir
-    ``pulse_demo.jsonl`` dosyasına yazılır (bkz. TECHNICAL_AUDIT.md).
+    ``pulse_demo.jsonl`` dosyasına yazılır.
     Dönüş: eklenen satır sayısı.
     """
     demo = [

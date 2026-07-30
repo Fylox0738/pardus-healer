@@ -146,7 +146,7 @@ Her push'ta aynı testler GitHub Actions CI ile de çalışır
 
 - [x] Geçmiş takibi (skorun zaman içindeki değişimi)
 - [x] Daha fazla güvenlik kontrolü (açık portlar, SSH sertleştirme, otomatik güncelleme)
-- [ ] Sürücü / donanım uyumluluk taraması (GPU sürücü asistanı — bkz. DEVELOPMENT_OPPORTUNITIES.md)
+- [ ] Sürücü / donanım uyumluluk taraması
 - [ ] Çoklu dil desteği (i18n)
 
 ---

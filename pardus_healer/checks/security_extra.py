@@ -30,7 +30,7 @@ class OpenPortsCheck(BaseCheck):
     # anlamına gelir, dinlenen arayüzle ilgisi yoktur. Eskiden tüm satırda
     # "0.0.0.0:"/"*:" arandığı için 127.0.0.1'e bağlı (yalnızca yerel)
     # servisler de bu peer sütunu yüzünden yanlışlıkla "dışa açık"
-    # sayılıyordu (bkz. TECHNICAL_AUDIT.md). Local Address sütununu ayrı
+    # sayılıyordu. Local Address sütununu ayrı
     # yakalayıp yalnızca ONU değerlendiriyoruz.
     _LOCAL_ADDR_RE = re.compile(
         r"^\S+\s+\S+\s+\d+\s+\d+\s+(\S+):(\d+)\s+\S+"
@@ -148,7 +148,7 @@ class UnattendedUpgradesCheck(BaseCheck):
         # Eskiden dosyada HERHANGİ bir yerde "1" karakteri geçiyor mu diye
         # bakılıyordu — bu, ör. "Update-Package-Lists "0";" (KAPALI) satırı
         # varken bile dosyanın başka bir yerinde "1" geçtiği için yanlışlıkla
-        # "etkin" raporlanmasına yol açıyordu (bkz. TECHNICAL_AUDIT.md).
+        # "etkin" raporlanmasına yol açıyordu.
         # Şimdi doğrudan ilgili direktiflerin GERÇEK değerini okuyoruz.
         update_val = self._directive_value(cfg, "Update-Package-Lists")
         upgrade_val = self._directive_value(cfg, "Unattended-Upgrade")

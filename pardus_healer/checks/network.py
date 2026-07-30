@@ -32,7 +32,7 @@ class InternetCheck(BaseCheck):
                 # doğrudan ayarlanıyor — engine kontrolleri paralel
                 # çalıştırdığından (ThreadPoolExecutor) global varsayılan,
                 # eşzamanlı çalışan başka bir kontrolün soketini de
-                # etkileyebilirdi (bkz. TECHNICAL_AUDIT.md).
+                # etkileyebilirdi.
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                     sock.settimeout(3)
                     sock.connect((host, port))
@@ -68,7 +68,7 @@ class DnsCheck(BaseCheck):
     # Tek bir sabit alan adına (yalnızca "pardus.org.tr") bağımlıydı — o
     # tek alan adı geçici olarak çözümlenemezse (kayıt değişikliği, o
     # sunucunun kendi sorunu vb.) DNS'in tamamı bozukmuş gibi yanlış bir
-    # WARN üretiyordu (bkz. TECHNICAL_AUDIT.md). Şimdi birden fazla
+    # WARN üretiyordu. Şimdi birden fazla
     # bağımsız alan adı deneniyor; yalnızca HİÇBİRİ çözümlenmezse uyarılır.
     DOMAINS = ["pardus.org.tr", "debian.org", "cloudflare.com"]
 

@@ -3,8 +3,7 @@
 Yalnızca ``os-prober`` + ``update-grub`` (grub-mkconfig) ile GRUB menü
 YAPILANDIRMASINI yeniden üretir; MBR/EFI'ye ``grub-install`` ile YENİDEN
 YAZMA YAPMAZ (bu, hatalı kullanımda sistemi önyüklenemez hale getirebilecek
-riskli bir işlemdir ve bilinçli olarak kapsam dışı bırakılmıştır — bkz.
-FIX_DECISION_MATRIX.md P3, DEVELOPMENT_OPPORTUNITIES.md #3).
+riskli bir işlemdir ve bilinçli olarak kapsam dışı bırakılmıştır).
 """
 
 from __future__ import annotations

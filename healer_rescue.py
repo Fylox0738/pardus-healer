@@ -21,9 +21,8 @@ _PACKAGE_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9+.\-:]*$")
 
 # Rescue modu son çare aracıdır ve TTY/siyah ekran durumunda kullanılır —
 # yanlışlıkla bu paketlerden birinin "kaldır" (remove) olarak geri
-# alınmasını önermek sistemi tamamen önyüklenemez hale getirebilir (bkz.
-# TECHNICAL_AUDIT.md). Bu paketleri içeren "kurulum" işlemleri geri alma
-# listesine hiç eklenmez.
+# alınmasını önermek sistemi tamamen önyüklenemez hale getirebilir.
+# Bu paketleri içeren "kurulum" işlemleri geri alma listesine hiç eklenmez.
 _PROTECTED_PREFIXES = (
     "linux-image", "linux-headers", "linux-modules", "linux-firmware",
     "systemd", "dbus", "dpkg", "apt", "libc6", "bash", "coreutils",
@@ -141,7 +140,6 @@ def main():
             # apt-get'in kendi kuru-çalıştırma bayrağı (-s): hiçbir paketi
             # gerçekten kaldırmadan/kurmadan ne olacağını gösterir. Son çare
             # bir kurtarma aracında "önce gör, sonra uygula" seçeneği şarttır
-            # (bkz. TECHNICAL_AUDIT.md, healer_rescue bulgusu).
             sim_argv = ["apt-get", target_action["revert_action"], "-s", "--"] + target_action["packages"]
             if os.geteuid() != 0:
                 argv = ["sudo"] + argv

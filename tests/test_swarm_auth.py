@@ -1,6 +1,6 @@
 """Swarm HMAC kimlik doğrulama testleri.
 
-TECHNICAL_AUDIT.md Kol 2 bulgusu: imza eskiden yalnızca timestamp:nonce
+ Kol 2 bulgusu: imza eskiden yalnızca timestamp:nonce
 üzerinden hesaplanıyordu; /health için üretilmiş bir imza /heal_all'a karşı
 yeniden kullanılabiliyordu (cross-endpoint replay). İmza artık method+path'i
 kapsıyor; nonce'lar tek kullanımlık.

@@ -4,7 +4,7 @@ Türkiye'de yaygın e-imza/akıllı kart araçları ve e-Devlet'in bazı eski
 JNLP tabanlı hizmetleri Java çalışma zamanına ve PC/SC akıllı kart
 servisine (pcscd) ihtiyaç duyar. Bu, kamu personeli/öğrencinin en sık
 karşılaştığı "e-imza çalışmıyor" sınıfı sorunları tek yerde toplar
-(bkz. DEVELOPMENT_OPPORTUNITIES.md #1).
+.
 """
 
 from __future__ import annotations

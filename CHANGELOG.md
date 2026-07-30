@@ -24,7 +24,7 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr/) esinlidir.
   minimal yerel ayarlarda (LANG=C) çökmeyen çıktı.
 - **Birim test paketi** — 57 stdlib-only test (`make test` /
   `python3 -m unittest discover -s tests`) + GitHub Actions CI.
-- Jüri için `demo.sh`, `HOW_TO_RUN_FOR_JURY.md`, `RELEASE_SUMMARY.md`.
+- Jüri için `demo.sh`, `HOW_TO_RUN_FOR_JURY.md`, ``.
 
 ### Düzeltildi
 - "Düzelt" butonu `pkexec`'i komuttan silip sessizce başarısız oluyordu —

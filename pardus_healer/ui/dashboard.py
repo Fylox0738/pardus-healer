@@ -13,7 +13,7 @@ from ..core.models import DiagnosisReport, Fix, Insight, Status
 from . import theme
 from .widgets import HealthGauge, LiveMeter, TrendChart
 
-# Tek kaynak theme.py'de — bkz. TECHNICAL_AUDIT.md.
+# Tek kaynak theme.py'de
 _GRADE_HEX = theme.GRADE_HEX
 
 

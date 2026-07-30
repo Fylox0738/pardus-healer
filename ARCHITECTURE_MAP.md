@@ -31,13 +31,13 @@ pardus_healer/
 │   ├── notify.py          #   notify-send masaüstü bildirimi
 │   ├── advisor.py         #   çift modlu özet: kural tabanlı metin ÜRETİCİ | Ollama'ya devreden köprü
 │   ├── live.py             #   canlı CPU/RAM/Disk örnekleme (dashboard mini görev yöneticisi)
-│   ├── pulse.py           #   "Pardus Nabız" — yerel/opt-in SOS olay birikimi (bkz. TECHNICAL_AUDIT: demo veri riski)
+│   ├── pulse.py           #   "Pardus Nabız" — yerel/opt-in SOS olay birikimi (demo verisi ayrı dosyada tutulur)
 │   └── bug_report.py      #   "SOS Kartı" — DiagnosisReport'u talep-formu şablonuna çevirir
 ├── checks/                # tekil tanı modülleri — her biri BaseCheck alt sınıfı
 │   ├── network.py  apt.py  packages.py  updates.py
 │   ├── disk.py  memory.py  cpu.py  hardware.py  boot.py  maintenance.py
 │   ├── services.py  security.py  security_extra.py  logs.py
-│   └── bootloader.py  esignature.py  printer.py  # DEVELOPMENT_OPPORTUNITIES #1-#3
+│   └── bootloader.py  esignature.py  printer.py  # Pardus'a özgü kontroller
 │   └── __init__.py        #   ALL_CHECK_CLASSES — yeni kontrol eklemenin tek adımı
 ├── report/                # DiagnosisReport → çıktı formatları
 │   ├── html_report.py  json_report.py  text_report.py

@@ -88,8 +88,8 @@ class SmartDiskCheck(BaseCheck):
         # Eskiden yalnızca "/dev/nvme0n1" veya "/dev/sda" sabit kodlanmıştı —
         # sanal makinelerde (virtio: /dev/vda), birden fazla diskli
         # sistemlerde ya da LVM üzerinde bu iki yoldan hiçbiri var olmayabilir,
-        # kontrol de sessizce yanlış/eksik sonuç veriyordu (bkz.
-        # TECHNICAL_AUDIT.md). Artık gerçek fiziksel diskler lsblk ile
+        # kontrol de sessizce yanlış/eksik sonuç veriyordu.
+        # Artık gerçek fiziksel diskler lsblk ile
         # keşfediliyor ve proje genelindeki ortak shell yardımcıları
         # (which/run) kullanılıyor.
         if not which("smartctl"):

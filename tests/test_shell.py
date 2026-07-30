@@ -1,7 +1,7 @@
 """core/shell.py güvenli komut çalıştırma testleri.
 
 Projenin en katı kuralı: shell=True HİÇBİR yerde kullanılmaz (geçmişte bir
-komut enjeksiyonu açığı bu yüzden oluşmuştu, bkz. CLAUDE.md). Bu testler
+komut enjeksiyonu açığı bu yüzden oluşmuştu,
 string girdinin bile kabuk yorumlamasına gitmediğini doğrular.
 """
 

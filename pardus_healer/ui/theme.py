@@ -12,7 +12,7 @@ ACCENT = "#00a79d"
 # Tek kaynak: durum ve not (grade) renkleri. widgets.py ve dashboard.py
 # eskiden bu paletleri birbirinden bağımsız olarak yeniden tanımlıyordu
 # (üçü de kaymadan aynı kalması gerekiyordu ama garanti değildi) — bkz.
-# TECHNICAL_AUDIT.md. Artık ikisi de buradan türetiyor.
+#. Artık ikisi de buradan türetiyor.
 STATUS_HEX = {
     "OK": "#22c55e",
     "WARN": "#eab308",

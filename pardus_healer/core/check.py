@@ -17,7 +17,7 @@ from .models import CheckResult, Fix, Metric, Status
 # ama _make() eskiden "fix is None" ile "fix hiç verilmedi, default_fix
 # kullan" durumlarını ayırt edemiyordu — ikisi de aynı görünüyordu, bu
 # yüzden default_fix tanımlı bir kontrolde ok() çağrısı yine de eski fix'i
-# geri getiriyordu (bkz. TECHNICAL_AUDIT.md). Bu sentinel, "hiç verilmedi"
+# geri getiriyordu. Bu sentinel, "hiç verilmedi"
 # durumunu gerçek bir None'dan ayırt eder.
 _UNSET = object()
 

@@ -24,7 +24,7 @@ class DoctorApp(Gtk.Window):
 
         # Koyu/açık tema sabit kodlanmıştı (her zaman koyu) — Pardus Healer'ın
         # paylaşılan ayarını yok sayıyordu, bu da iki uygulama arasında
-        # tutarsız bir görünüme yol açıyordu (bkz. TECHNICAL_AUDIT.md).
+        # tutarsız bir görünüme yol açıyordu.
         # Artık aynı kalıcı tercihi (Config.dark_mode) paylaşıyorlar.
         provider = Gtk.CssProvider()
         provider.load_from_data(theme.get_css(dark=Config().dark_mode))

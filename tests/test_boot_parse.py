@@ -1,6 +1,6 @@
 """Açılış süresi ayrıştırma regresyon testleri.
 
-TECHNICAL_AUDIT.md Kol 1 bulgusu: 60 sn'yi aşan açılışlarda systemd toplamı
+ Kol 1 bulgusu: 60 sn'yi aşan açılışlarda systemd toplamı
 "1min 7.311s" biçiminde yazar; eski regex bunu ayrıştıramayıp yanlış değere
 düşüyordu. Bu testler o hatanın geri gelmesini engeller.
 """

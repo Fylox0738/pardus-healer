@@ -71,8 +71,7 @@ class BootTimeCheck(BaseCheck):
         # örnek: "Startup finished in 4.2s (kernel) + 12.6s (userspace) = 16.8s"
         # 60 sn'yi aşan açılışlarda systemd toplamı "1min 7.311s" biçiminde
         # yazar — bu yüzden yalnızca saf saniye değil, saat/dakika/saniye
-        # bileşenlerini de ayrıştırıp topluyoruz (bkz. TECHNICAL_AUDIT.md
-        # Kol 1, madde: "açılış süresi 60sn+ yanlış hesaplanıyor").
+        # bileşenlerini de ayrıştırıp topluyoruz.
         for line in text.splitlines():
             line = line.strip()
             idx = line.rfind("=")

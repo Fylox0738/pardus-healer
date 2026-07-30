@@ -1,6 +1,6 @@
 """Güvenlik kontrolleri ayrıştırma regresyon testleri.
 
-İki denetim bulgusunu kilitler (TECHNICAL_AUDIT.md Kol 1):
+İki denetim bulgusunu kilitler:
 1. Açık port kontrolü ss çıktısının yalnızca Local Address sütununa bakmalı —
    LISTEN satırlarının Peer sütunu her zaman "0.0.0.0:*" olduğundan, tüm
    satırda arama yapmak 127.0.0.1'e bağlı servisleri "dışa açık" gösteriyordu.

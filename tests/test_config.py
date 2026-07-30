@@ -1,6 +1,6 @@
 """Ayar saklama katmanı testleri.
 
-CLAUDE.md kuralı: ayar dosyası bozuk/yok olsa bile uygulama ASLA çökmemeli,
+ kuralı: ayar dosyası bozuk/yok olsa bile uygulama ASLA çökmemeli,
 varsayılanlara dönmeli. Yazma atomik olmalı (yarım dosya kalmamalı).
 """
 
