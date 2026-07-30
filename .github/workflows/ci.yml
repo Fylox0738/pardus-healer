@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sözdizimi denetimi (tüm modüller)
+        run: python3 -m compileall -q pardus_healer pardus_doctor tests healer_rescue.py run.py main.py main_doctor.py
+
+      - name: Birim testleri (stdlib-only, 3. parti bağımlılık yok)
+        run: python3 -m unittest discover -s tests -v
+
+      - name: CLI smoke test (tanı motoru uçtan uca)
+        run: |
+          python3 run.py --cli --no-color; code=$?
+          echo "CLI çıkış kodu: $code (0=temiz, 1=uyarı var, 2=sorun bulundu — üçü de geçerli tanı sonucudur)"
+          test "$code" -le 2
