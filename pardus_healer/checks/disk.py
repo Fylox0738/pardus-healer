@@ -24,23 +24,50 @@ class DiskSpaceCheck(BaseCheck):
     WARN_PCT = 80
     FAIL_PCT = 90
 
+    # Yalnızca "/" kontrol ediliyordu — okul/kurum kurulumlarında sık
+    # görülen ayrı "/home" bölümü doluysa (kök diskte hâlâ bolca yer varken)
+    # bu tamamen kaçırılıyordu (bkz. TECHNICAL_AUDIT.md). "/home" ayrı bir
+    # bölüm değilse (aynı dosya sistemini paylaşıyorsa) tekilleştirilip
+    # yalnızca bir kez raporlanır.
+    MOUNTS_TO_CHECK = ["/", "/home"]
+
     def run(self):
-        try:
-            st = os.statvfs("/")
-        except (OSError, AttributeError):
-            # statvfs Windows'ta yok; Linux dışı ortamda bilinemez.
+        readings = []
+        for mount in self.MOUNTS_TO_CHECK:
+            if not os.path.isdir(mount):
+                continue
+            try:
+                st = os.statvfs(mount)
+            except (OSError, AttributeError):
+                # statvfs Windows'ta yok; Linux dışı ortamda bilinemez.
+                continue
+            total = st.f_frsize * st.f_blocks
+            if total == 0:
+                continue
+            free = st.f_frsize * st.f_bavail
+            used = total - (st.f_frsize * st.f_bfree)
+            pct = int(used / total * 100)
+            readings.append((mount, pct, free / (1024 ** 3)))
+
+        if not readings:
             return self.unknown("Disk bilgisi bu ortamda alınamıyor.")
 
-        total = st.f_frsize * st.f_blocks
-        free = st.f_frsize * st.f_bavail
-        if total == 0:
-            return self.unknown("Disk bilgisi okunamadı.")
+        seen = set()
+        uniq = []
+        for mount, pct, free_gb in readings:
+            key = (pct, round(free_gb, 1))
+            if key in seen:
+                continue
+            seen.add(key)
+            uniq.append((mount, pct, free_gb))
 
-        used = total - (st.f_frsize * st.f_bfree)
-        pct = int(used / total * 100)
-        free_gb = free / (1024 ** 3)
+        mount, pct, free_gb = max(uniq, key=lambda t: t[1])
         metric = Metric(pct, "%", percent=pct)
-        base = f"Boş alan: {free_gb:.1f} GB — kök disk %{pct} dolu."
+        label = "kök disk" if mount == "/" else f"'{mount}' bölümü"
+        base = f"Boş alan: {free_gb:.1f} GB — {label} %{pct} dolu."
+        others = [f"{m} %{p}" for m, p, _ in uniq if (m, p) != (mount, pct)]
+        if others:
+            base += f" (Diğer izlenen bölümler: {', '.join(others)})"
 
         if pct >= self.FAIL_PCT:
             return self.fail(

@@ -7,7 +7,7 @@ import os
 
 from ..core.check import BaseCheck
 from ..core.models import Metric
-from ..core.shell import read_file
+from ..core.shell import read_file, run, which
 
 
 class BatteryHealthCheck(BaseCheck):
@@ -85,33 +85,70 @@ class SmartDiskCheck(BaseCheck):
     weight = 1.0
 
     def run(self):
-        import shutil
-        import subprocess
-        
-        if not shutil.which("smartctl"):
+        # Eskiden yalnızca "/dev/nvme0n1" veya "/dev/sda" sabit kodlanmıştı —
+        # sanal makinelerde (virtio: /dev/vda), birden fazla diskli
+        # sistemlerde ya da LVM üzerinde bu iki yoldan hiçbiri var olmayabilir,
+        # kontrol de sessizce yanlış/eksik sonuç veriyordu (bkz.
+        # TECHNICAL_AUDIT.md). Artık gerçek fiziksel diskler lsblk ile
+        # keşfediliyor ve proje genelindeki ortak shell yardımcıları
+        # (which/run) kullanılıyor.
+        if not which("smartctl"):
             return self.info(
                 "Disk sağlığı okunamadı (smartctl eksik).",
                 detail="Erken donanım uyarısı için smartmontools paketini kurun."
             )
-            
-        try:
-            # Sadece kök (root) veya sudo izinleriyle çalışır, 
-            # pkexec istemeyiz çünkü tarama anında parola sorsun istemiyoruz.
-            # Eger root degilse hata verir, biz bunu algılayıp pass geçebiliriz.
-            disk_path = "/dev/nvme0n1" if os.path.exists("/dev/nvme0n1") else "/dev/sda"
-            result = subprocess.run(["smartctl", "-H", disk_path], capture_output=True, text=True, timeout=2)
-            out = result.stdout
-            
-            if result.returncode == 0 or "PASSED" in out:
-                return self.ok("S.M.A.R.T. disk sağlığı: PASSED (İyi durumda)")
-            elif "FAILED" in out:
-                return self.fail(
-                    "S.M.A.R.T. Uyarısı: Disk arızası tespit edildi!",
-                    detail="Diskiniz fiziksel olarak ömrünü dolduruyor olabilir.",
-                    root_cause="Donanım (Disk) yaşlanması veya fiziksel hasar.",
-                    recommendation="ACİLEN VERİLERİNİZİ YEDEKLEYİN. Diski yenisiyle değiştirin."
-                )
-            else:
-                return self.info("Disk sağlığı verisi root yetkisi gerektirebilir.")
-        except Exception as e:
-            return self.info(f"Disk sağlığı taraması başarısız: {e}")
+
+        disks = self._physical_disks()
+        if not disks:
+            return self.info(
+                "Fiziksel disk bulunamadı.",
+                detail="Sanal makine/konteyner ortamında S.M.A.R.T. verisi "
+                "genelde erişilemez.",
+            )
+
+        failed = []
+        checked = 0
+        for disk in disks:
+            res = run(["smartctl", "-H", disk], timeout=10)
+            out = res.out
+            if "FAILED" in out:
+                failed.append(disk)
+                checked += 1
+            elif res.ok or "PASSED" in out:
+                checked += 1
+            # Ne PASSED ne FAILED (izin yetersiz / sanal disk) → bu diski
+            # sessizce atla, yanlış-pozitif üretme.
+
+        if failed:
+            return self.fail(
+                f"S.M.A.R.T. Uyarısı: {', '.join(failed)} disk(in)de arıza tespit edildi!",
+                detail="Diskiniz fiziksel olarak ömrünü dolduruyor olabilir.",
+                root_cause="Donanım (Disk) yaşlanması veya fiziksel hasar.",
+                recommendation="ACİLEN VERİLERİNİZİ YEDEKLEYİN. Diski yenisiyle değiştirin."
+            )
+        if checked:
+            return self.ok(
+                f"S.M.A.R.T. disk sağlığı: PASSED ({checked} disk kontrol edildi)."
+            )
+        return self.info(
+            "Disk sağlığı verisi alınamadı.",
+            detail="Root yetkisi gerekiyor olabilir ya da sanal disk "
+            "S.M.A.R.T. desteklemiyor.",
+        )
+
+    @staticmethod
+    def _physical_disks() -> list[str]:
+        if not which("lsblk"):
+            return [
+                p for p in ("/dev/sda", "/dev/nvme0n1", "/dev/vda")
+                if os.path.exists(p)
+            ]
+        res = run(["lsblk", "-d", "-n", "-o", "NAME,TYPE"], timeout=10)
+        if not res.ok:
+            return []
+        disks = []
+        for line in res.stdout.splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and parts[1] == "disk":
+                disks.append(f"/dev/{parts[0]}")
+        return disks

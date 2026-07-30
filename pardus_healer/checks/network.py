@@ -28,8 +28,13 @@ class InternetCheck(BaseCheck):
     def run(self):
         for host, port in self.ENDPOINTS:
             try:
-                socket.setdefaulttimeout(3)
+                # Global socket.setdefaulttimeout() yerine soket üzerinde
+                # doğrudan ayarlanıyor — engine kontrolleri paralel
+                # çalıştırdığından (ThreadPoolExecutor) global varsayılan,
+                # eşzamanlı çalışan başka bir kontrolün soketini de
+                # etkileyebilirdi (bkz. TECHNICAL_AUDIT.md).
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(3)
                     sock.connect((host, port))
                 return self.ok(
                     "İnternet bağlantısı aktif.",
@@ -60,20 +65,33 @@ class DnsCheck(BaseCheck):
         description="systemd-resolved servisini yeniden başlatır.",
     )
 
+    # Tek bir sabit alan adına (yalnızca "pardus.org.tr") bağımlıydı — o
+    # tek alan adı geçici olarak çözümlenemezse (kayıt değişikliği, o
+    # sunucunun kendi sorunu vb.) DNS'in tamamı bozukmuş gibi yanlış bir
+    # WARN üretiyordu (bkz. TECHNICAL_AUDIT.md). Şimdi birden fazla
+    # bağımsız alan adı deneniyor; yalnızca HİÇBİRİ çözümlenmezse uyarılır.
+    DOMAINS = ["pardus.org.tr", "debian.org", "cloudflare.com"]
+
     def run(self):
-        try:
-            socket.setdefaulttimeout(3)
-            addr = socket.gethostbyname("pardus.org.tr")
-            return self.ok(
-                "Alan adları çözümleniyor.",
-                detail=f"pardus.org.tr → {addr}",
-            )
-        except OSError:
-            # İnternet varsa ama DNS yoksa bu ayrı bir sorundur.
-            return self.warn(
-                "Alan adları çözümlenemiyor.",
-                detail="pardus.org.tr çözümlenemedi.",
-                root_cause="DNS sunucusu yanıt vermiyor ya da internet yok.",
-                recommendation="Önce internet bağlantısını kontrol edin; "
-                "bağlantı varsa DNS önbelleğini temizleyin.",
-            )
+        # NOT: socket.setdefaulttimeout() burada kasıtlı olarak
+        # KULLANILMIYOR — socket.gethostbyname() alttaki C kütüphanesi
+        # gethostbyname()'i çağırır ve Python'ın soket zaman aşımı
+        # ayarını hiçbir zaman dikkate almaz; global durumu değiştirmenin
+        # (paralel çalışan diğer kontrolleri etkileme riski dışında)
+        # burada hiçbir faydası yoktur.
+        for domain in self.DOMAINS:
+            try:
+                addr = socket.gethostbyname(domain)
+                return self.ok(
+                    "Alan adları çözümleniyor.",
+                    detail=f"{domain} → {addr}",
+                )
+            except OSError:
+                continue
+        return self.warn(
+            "Alan adları çözümlenemiyor.",
+            detail=f"Denenen alan adları çözümlenemedi: {', '.join(self.DOMAINS)}",
+            root_cause="DNS sunucusu yanıt vermiyor ya da internet yok.",
+            recommendation="Önce internet bağlantısını kontrol edin; "
+            "bağlantı varsa DNS önbelleğini temizleyin.",
+        )

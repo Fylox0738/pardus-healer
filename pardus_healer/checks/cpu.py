@@ -85,6 +85,14 @@ class CpuTempCheck(BaseCheck):
         return self.ok(f"CPU sıcaklığı normal. ({temp:.0f} °C)",
                        detail=msg, metric=metric)
 
+    # "sensors" çıktısında yalnızca CPU'ya ait çipleri (Package/Tdie/Core)
+    # dikkate alıyoruz. Eskiden ÇIKTIDAKİ TÜM "°C" değerlerinin maksimumu
+    # alınıyordu — bu, sistemde nvme/GPU/anakart sıcaklık sensörü varsa
+    # "CPU sıcaklığı" olarak yanlış bir bileşenin (ör. ısınan bir SSD/GPU)
+    # değerini raporlayabiliyordu (bkz. TECHNICAL_AUDIT.md).
+    _CPU_CHIP_HINTS = ("coretemp", "k10temp", "zenpower", "cpu_thermal")
+    _CPU_LABEL_HINTS = ("package", "tdie", "tctl", "core")
+
     # ---- sıcaklık okuma stratejileri ----
     def _read_temp(self) -> float | None:
         return self._from_sensors() or self._from_sysfs()
@@ -95,18 +103,32 @@ class CpuTempCheck(BaseCheck):
         res = run(["sensors"], timeout=10)
         if not res.ok:
             return None
-        best = 0.0
-        for line in res.stdout.splitlines():
-            if "°C" in line:
-                for tok in line.split():
-                    if "°C" in tok:
-                        try:
-                            val = float(tok.replace("+", "").replace("°C", ""))
-                        except ValueError:
-                            continue
-                        if 0 < val < 150:
-                            best = max(best, val)
-        return best or None
+
+        best = None
+        is_cpu_chip = False
+        for raw in res.stdout.splitlines():
+            line = raw.strip()
+            if not line:
+                is_cpu_chip = False
+                continue
+            if ":" not in line:
+                # yeni çip başlığı, ör. "coretemp-isa-0000", "nvme-pci-0100"
+                is_cpu_chip = any(h in line.lower() for h in self._CPU_CHIP_HINTS)
+                continue
+            if not is_cpu_chip or "°C" not in line:
+                continue
+            label = line.split(":", 1)[0].strip().lower()
+            if not any(h in label for h in self._CPU_LABEL_HINTS):
+                continue
+            for tok in line.split():
+                if "°C" in tok:
+                    try:
+                        val = float(tok.replace("+", "").replace("°C", ""))
+                    except ValueError:
+                        continue
+                    if 0 < val < 150:
+                        best = val if best is None else max(best, val)
+        return best
 
     def _from_sysfs(self) -> float | None:
         text = read_file("/sys/class/thermal/thermal_zone0/temp")

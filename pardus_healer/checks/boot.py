@@ -13,8 +13,7 @@ from ..core.check import BaseCheck
 from ..core.models import Metric
 from ..core.shell import run, which
 
-_TIME_RE = re.compile(r"=\s*([\d.]+)s\s*$")
-_ANY_TIME_RE = re.compile(r"([\d.]+)s")
+_TOTAL_RE = re.compile(r"^\s*(?:(\d+)h\s*)?(?:(\d+)min\s*)?([\d.]+)s")
 
 
 class BootTimeCheck(BaseCheck):
@@ -48,7 +47,7 @@ class BootTimeCheck(BaseCheck):
             base += f" En yavaş: {slow}."
 
         if seconds >= self.FAIL_SEC:
-            return self.warn(
+            return self.fail(
                 f"Açılış çok yavaş. ({seconds:.0f} sn)",
                 detail=base,
                 metric=metric,
@@ -70,16 +69,33 @@ class BootTimeCheck(BaseCheck):
     @staticmethod
     def _parse_total(text: str):
         # örnek: "Startup finished in 4.2s (kernel) + 12.6s (userspace) = 16.8s"
+        # 60 sn'yi aşan açılışlarda systemd toplamı "1min 7.311s" biçiminde
+        # yazar — bu yüzden yalnızca saf saniye değil, saat/dakika/saniye
+        # bileşenlerini de ayrıştırıp topluyoruz (bkz. TECHNICAL_AUDIT.md
+        # Kol 1, madde: "açılış süresi 60sn+ yanlış hesaplanıyor").
         for line in text.splitlines():
-            m = _TIME_RE.search(line.strip())
-            if m:
-                try:
-                    return float(m.group(1))
-                except ValueError:
-                    pass
-        # yedek: satırdaki en büyük 's' değeri
-        vals = [float(x) for x in _ANY_TIME_RE.findall(text)]
-        return max(vals) if vals else None
+            line = line.strip()
+            idx = line.rfind("=")
+            if idx == -1:
+                continue
+            total = BootTimeCheck._parse_duration(line[idx + 1:])
+            if total is not None:
+                return total
+        # Tek satırlık/basit çıktılar için son çare: metnin başındaki süreyi dene.
+        return BootTimeCheck._parse_duration(text.strip())
+
+    @staticmethod
+    def _parse_duration(segment: str):
+        m = _TOTAL_RE.match(segment.strip())
+        if not m:
+            return None
+        hours = float(m.group(1)) if m.group(1) else 0.0
+        minutes = float(m.group(2)) if m.group(2) else 0.0
+        try:
+            seconds = float(m.group(3))
+        except ValueError:
+            return None
+        return hours * 3600 + minutes * 60 + seconds
 
     def _slowest_units(self) -> str:
         if not which("systemd-analyze"):
