@@ -25,6 +25,9 @@ from .hardware import BatteryHealthCheck, SmartDiskCheck
 from .maintenance import CacheCleanupCheck
 from .boot import BootTimeCheck
 from .logs import JournalErrorsCheck
+from .esignature import ESignatureCheck
+from .printer import PrinterCheck
+from .bootloader import BootloaderCheck
 
 # Kartların/raporun görüneceği sıra buradaki sıradır.
 ALL_CHECK_CLASSES = [
@@ -50,4 +53,7 @@ ALL_CHECK_CLASSES = [
     CacheCleanupCheck,
     BootTimeCheck,
     JournalErrorsCheck,
+    PrinterCheck,
+    BootloaderCheck,
+    ESignatureCheck,
 ]
