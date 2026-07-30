@@ -25,7 +25,7 @@ gerektirmeyen, cihazda çalışan bir **kural tabanlı teşhis motoru** kullanı
 | 🖥️ **CLI Modu** | `--cli` ile arayüzsüz tanı; sunucular ve otomasyon için renkli terminal çıktısı. |
 | ⚡ **Önceliklendirilmiş İçgörüler** | Ne önce yapılmalı? Güvenlik yamaları, kök nedenler ve riskler önem sırasına göre listelenir. |
 | 🔧 **Tek Tıkla Onarım** | Her sorun için güvenli, hazır `pkexec` komutları. Çıktı canlı terminalde akar. |
-| 🛡️ **21 Kontrol** | Ağ, DNS, APT, bozuk paketler, güvenlik güncellemeleri, disk, temizlenebilir alan, RAM, swap, CPU yükü/sıcaklığı, pil sağlığı, açılış süresi, systemd servisleri, güvenlik duvarı, açık portlar, SSH güvenliği, otomatik güncelleme, günlük hataları... |
+| 🛡️ **25 Kontrol** | Ağ, DNS, APT, bozuk paketler, güvenlik güncellemeleri, disk (kök + /home), RAM, swap, CPU yükü/sıcaklığı, pil sağlığı, S.M.A.R.T. disk sağlığı, açılış süresi, systemd servisleri, güvenlik duvarı, açık portlar, SSH güvenliği, otomatik güncelleme, günlük hataları, **yazıcı/CUPS**, **GRUB önyükleyici**, **e-İmza/e-Devlet uyumluluğu**... |
 | 🖥️ **Terminalsiz — Okul Dostu** | Tüm işlemler arayüzden yapılır; yönetici parolası gerektiğinde grafik pencere çıkar. Terminal bilgisi gerekmez. |
 | 📄 **HTML + JSON Rapor** | Yazdırılabilir/PDF'lenebilir şık HTML; otomasyon için makine-okur JSON. |
 | 🔔 **Masaüstü Bildirimi** | Kritik sorunlarda `notify-send` ile uyarı. |
@@ -87,10 +87,10 @@ Pardus / Debian / Ubuntu üzerinde:
 
 ```bash
 # Bağımlılıklar (yalnızca GTK — ek Python paketi gerekmez)
-sudo apt-get install python3-gi gir1.2-gtk-3.0
+sudo apt-get install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1
 
 # İsteğe bağlı (daha zengin bilgi)
-sudo apt-get install lm-sensors ufw
+sudo apt-get install lm-sensors ufw smartmontools
 
 # Grafik arayüz
 python3 run.py
@@ -103,23 +103,50 @@ python3 run.py --cli --quiet          # yalnızca skor (betikler için)
 
 ---
 
+## 🎬 Hızlı Demo (Jüri)
+
+```bash
+bash demo.sh
+```
+
+Adım adım: motor kanıtı → birim testleri → CLI tanı → HTML/JSON rapor → GUI.
+Ayrıntılı senaryolar ve gerçek dünya kanıtları için
+[HOW_TO_RUN_FOR_JURY.md](HOW_TO_RUN_FOR_JURY.md).
+
+---
+
 ## 🧪 Test
 
 Çekirdek mantık GTK gerektirmediği için herhangi bir makinede test edilebilir:
 
 ```bash
+# 57 birim testi (yalnızca standart kütüphane, 3. parti bağımlılık yok)
+make test          # veya: python3 -m unittest discover -s tests
+
+# motor smoke-testi
 python3 -c "from pardus_healer.core.engine import DiagnosisEngine; \
             r=DiagnosisEngine().run_all(); \
             print('Skor:', r.health_score, r.grade)"
 ```
 
+Her push'ta aynı testler GitHub Actions CI ile de çalışır
+(`.github/workflows/ci.yml`).
+
 ---
+
+## ⚠️ Bilinen Kısıtlar
+
+Şeffaflık için: aşağıdakiler bilinçli olarak bu sürümün kapsamı dışında bırakılmıştır, "eksik/unutulmuş" değildir.
+
+- **Filo (Swarm) ağ API'si TLS kullanmıyor** — yalnızca paylaşılan anahtar + HMAC + nonce ile korunuyor. Bu, aynı güvenilir yerel ağdaki (ev/okul LAN'ı) makineler arası kullanım için yeterlidir, ama şifrelenmemiş bir ağ üzerinden veya güvenilmeyen bir ağda çalıştırılmamalıdır.
+- **Gerçek Pardus kurumsal marka rengi paletiyle tam örtüşme doğrulanmadı** — yalnızca Healer/Doctor arasında iç tutarlılık sağlandı (`#00a79d`); resmi marka kılavuzuyla karşılaştırma yapılmadı.
+- **Çoklu dil desteği (i18n/gettext) yok** — proje şu an yalnızca Türkçe arayüz/metin sunuyor.
 
 ## 📌 Yol Haritası
 
-- [ ] Geçmiş takibi (skorun zaman içindeki değişimi)
-- [ ] Daha fazla güvenlik kontrolü (açık portlar, başarısız girişler)
-- [ ] Sürücü / donanım uyumluluk taraması
+- [x] Geçmiş takibi (skorun zaman içindeki değişimi)
+- [x] Daha fazla güvenlik kontrolü (açık portlar, SSH sertleştirme, otomatik güncelleme)
+- [ ] Sürücü / donanım uyumluluk taraması (GPU sürücü asistanı — bkz. DEVELOPMENT_OPPORTUNITIES.md)
 - [ ] Çoklu dil desteği (i18n)
 
 ---
