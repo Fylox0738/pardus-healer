@@ -9,14 +9,12 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import GLib, Gtk  # noqa: E402
 
+from . import theme
 
-_GRADE_RGB = {
-    "A": (0.13, 0.77, 0.37),
-    "B": (0.52, 0.80, 0.09),
-    "C": (0.92, 0.70, 0.03),
-    "D": (0.98, 0.45, 0.09),
-    "F": (0.94, 0.27, 0.27),
-}
+# Not renkleri artık theme.py'deki tek kaynaktan türetiliyor (bkz.
+# TECHNICAL_AUDIT.md — aynı palet burada ve dashboard.py'de bağımsız
+# tanımlıydı).
+_GRADE_RGB = {k: theme.hex_to_rgb_float(v) for k, v in theme.GRADE_HEX.items()}
 
 
 class HealthGauge(Gtk.DrawingArea):

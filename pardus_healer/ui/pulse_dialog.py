@@ -3,7 +3,8 @@
 
 Gerçek bir sunucu/toplama altyapısı yoktur — bu tamamen yerel, opt-in
 verilerin (bkz. ``core/pulse.py``) bir görünümüdür. Demo amaçlı örnek
-veri, "Demo Verisi Yükle" butonuyla açıkça eklenir.
+veri ayrı bir dosyada tutulur, "Demo Verisi Göster" ile açıkça
+görünür kılınır ve her zaman 🧪 etiketiyle gerçek veriden ayrı gösterilir.
 """
 
 from __future__ import annotations
@@ -40,6 +41,8 @@ class PulseDialog(Gtk.Dialog):
         intro.set_xalign(0.0)
         box.pack_start(intro, False, False, 0)
 
+        self._show_demo = False
+
         self.list_box = Gtk.ListBox()
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -48,9 +51,15 @@ class PulseDialog(Gtk.Dialog):
         box.pack_start(scroll, True, True, 0)
 
         btn_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        demo_btn = Gtk.Button(label="🧪 Demo Verisi Yükle")
-        demo_btn.connect("clicked", self._on_load_demo)
-        btn_row.pack_start(demo_btn, False, False, 0)
+        self.demo_toggle = Gtk.CheckButton(label="🧪 Demo verisini göster")
+        self.demo_toggle.connect("toggled", self._on_toggle_demo)
+        btn_row.pack_start(self.demo_toggle, False, False, 0)
+        demo_seed_btn = Gtk.Button(label="Demo Verisi Ekle")
+        demo_seed_btn.connect("clicked", self._on_load_demo)
+        btn_row.pack_start(demo_seed_btn, False, False, 0)
+        demo_clear_btn = Gtk.Button(label="Demo Verisini Temizle")
+        demo_clear_btn.connect("clicked", self._on_clear_demo)
+        btn_row.pack_start(demo_clear_btn, False, False, 0)
         refresh_btn = Gtk.Button(label="🔄 Yenile")
         refresh_btn.connect("clicked", lambda _b: self.refresh())
         btn_row.pack_start(refresh_btn, False, False, 0)
@@ -61,16 +70,28 @@ class PulseDialog(Gtk.Dialog):
 
     def _on_load_demo(self, _btn):
         pulse.seed_demo_data()
+        self.demo_toggle.set_active(True)
+        self.refresh()
+
+    def _on_clear_demo(self, _btn):
+        pulse.clear_demo_data()
+        self.refresh()
+
+    def _on_toggle_demo(self, btn):
+        self._show_demo = btn.get_active()
         self.refresh()
 
     def refresh(self):
         for child in self.list_box.get_children():
             self.list_box.remove(child)
 
-        events = pulse.load_events()
+        events = pulse.load_events(include_demo=self._show_demo)
         if not events:
             row = Gtk.ListBoxRow()
-            lbl = Gtk.Label(label="Henüz veri yok. \"Demo Verisi Yükle\" ile örnek görebilirsiniz.")
+            lbl = Gtk.Label(
+                label="Henüz gerçek veri yok. \"Demo Verisi Ekle\" ve "
+                "\"Demo verisini göster\" ile örnek görebilirsiniz."
+            )
             lbl.set_margin_top(8)
             lbl.set_margin_bottom(8)
             row.add(lbl)
@@ -78,7 +99,7 @@ class PulseDialog(Gtk.Dialog):
             self.list_box.show_all()
             return
 
-        for issue, count, regions in pulse.top_issues(events):
+        for issue, real_count, demo_count, regions in pulse.top_issues(events):
             row = Gtk.ListBoxRow()
             vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
             vbox.set_margin_top(8)
@@ -86,7 +107,13 @@ class PulseDialog(Gtk.Dialog):
             vbox.set_margin_start(6)
             vbox.set_margin_end(6)
 
-            head = Gtk.Label(label=f"⚠️ {issue} — {count} bölgede görüldü")
+            if demo_count and real_count:
+                count_text = f"{real_count} gerçek + 🧪 {demo_count} demo bölgede görüldü"
+            elif demo_count:
+                count_text = f"🧪 {demo_count} demo bölgede görüldü (gerçek veri yok)"
+            else:
+                count_text = f"{real_count} bölgede görüldü"
+            head = Gtk.Label(label=f"⚠️ {issue} — {count_text}")
             head.set_xalign(0.0)
             head.get_style_context().add_class("insight-title")
             vbox.pack_start(head, False, False, 0)

@@ -2,7 +2,7 @@
 Name=Pardus Healer Kalkanı (Tray)
 Comment=Pardus Healer arka plan sistem tepsisi izleyicisi
 Exec=/usr/bin/python3 /opt/pardus-suite/run.py --tray
-Icon=security-high
+Icon=/usr/share/pardus-suite/assets/healer.svg
 Terminal=false
 Type=Application
 Categories=System;Security;

@@ -9,20 +9,25 @@ from pardus_doctor.core.git_analyzer import GitAnalyzer
 from pardus_doctor.core.ai_engine import AIEngine
 from pardus_doctor.core.safety import check_command_safety, to_argv
 from pardus_healer.ui import theme
+from pardus_healer.config import Config
 
 class DoctorApp(Gtk.Window):
     def __init__(self):
         super().__init__(title="Pardus Doctor - Akıllı Hata Dedektifi")
         self.set_default_size(1000, 650)
         self.set_position(Gtk.WindowPosition.CENTER)
-        
+
         # İkon yükleme
         icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "assets", "doctor.svg")
         if not os.path.exists(icon_path): icon_path = "/usr/share/pardus-suite/assets/doctor.svg"
         if os.path.exists(icon_path): self.set_icon_from_file(icon_path)
-        
+
+        # Koyu/açık tema sabit kodlanmıştı (her zaman koyu) — Pardus Healer'ın
+        # paylaşılan ayarını yok sayıyordu, bu da iki uygulama arasında
+        # tutarsız bir görünüme yol açıyordu (bkz. TECHNICAL_AUDIT.md).
+        # Artık aynı kalıcı tercihi (Config.dark_mode) paylaşıyorlar.
         provider = Gtk.CssProvider()
-        provider.load_from_data(theme.get_css(dark=True))
+        provider.load_from_data(theme.get_css(dark=Config().dark_mode))
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         main_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -31,7 +36,10 @@ class DoctorApp(Gtk.Window):
         # Header
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         header.get_style_context().add_class("sidebar")
-        header.set_margin_all(20)
+        header.set_margin_start(20)
+        header.set_margin_end(20)
+        header.set_margin_top(20)
+        header.set_margin_bottom(20)
         
         title = Gtk.Label()
         title.set_markup("<span size='18000' weight='heavy' color='white'>🩺 Pardus Doctor</span>")
@@ -43,7 +51,10 @@ class DoctorApp(Gtk.Window):
         
         # Left Panel (Controls)
         left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
-        left_box.set_margin_all(20)
+        left_box.set_margin_start(20)
+        left_box.set_margin_end(20)
+        left_box.set_margin_top(20)
+        left_box.set_margin_bottom(20)
         paned.pack1(left_box, resize=False, shrink=False)
         paned.set_position(320)
         
@@ -82,12 +93,18 @@ class DoctorApp(Gtk.Window):
         i_lbl = Gtk.Label(label="Pardus Doctor arka planda sisteminizin 'journalctl', 'dmesg' ve 'syslog' bileşenlerini tarar.\n\nEğer yukarıda bir Git klasörü belirtirseniz, sistem analizinde bulduğu çökmeleri Git tarihçesindeki (commit) değişikliklerle eşleştirerek sorunun temel kaynağını yapay zeka yardımıyla raporlar.")
         i_lbl.set_line_wrap(True)
         info_frame.add(i_lbl)
-        i_lbl.set_margin_all(14)
+        i_lbl.set_margin_start(14)
+        i_lbl.set_margin_end(14)
+        i_lbl.set_margin_top(14)
+        i_lbl.set_margin_bottom(14)
         left_box.pack_end(info_frame, False, False, 0)
 
         # Right Panel (Terminal / Report)
         right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        right_box.set_margin_all(20)
+        right_box.set_margin_start(20)
+        right_box.set_margin_end(20)
+        right_box.set_margin_top(20)
+        right_box.set_margin_bottom(20)
         paned.pack2(right_box, resize=True, shrink=False)
         
         title_rep = Gtk.Label()

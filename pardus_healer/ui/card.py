@@ -6,16 +6,16 @@ yumuşak bir animasyonla açılıp kapanır (Gtk.Revealer).
 
 from __future__ import annotations
 
-import subprocess
 import threading
 from typing import Callable, Optional
 
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import GLib, Gtk  # noqa: E402
+from gi.repository import Gdk, GLib, Gtk  # noqa: E402
 
 from ..core.models import CheckResult, Fix
+from .fix_runner import run_fix_command
 
 _BORDER_CLASSES = ("card-ok", "card-warn", "card-fail", "card-wait", "card-info-b")
 
@@ -94,6 +94,11 @@ class DiagnosticCard(Gtk.Box):
         self._header_event.set_visible_window(False)
         self._header_event.add(header)
         self._header_event.connect("button-press-event", self._on_header_click)
+        # Klavye erişimi: yalnızca fare ile açılabiliyordu (bkz.
+        # TECHNICAL_AUDIT.md) — artık Tab ile odaklanıp Enter/Boşluk ile
+        # açılıp kapanabiliyor.
+        self._header_event.set_can_focus(True)
+        self._header_event.connect("key-press-event", self._on_header_key)
         self.pack_start(self._header_event, False, False, 0)
 
         # ── Ayrıntı bölmesi (açılır) ──
@@ -118,6 +123,15 @@ class DiagnosticCard(Gtk.Box):
             self.revealer.set_reveal_child(not self.revealer.get_reveal_child())
             self.expander.set_label(
                 "▾" if self.revealer.get_reveal_child() else "▸")
+        return False
+
+    def _on_header_key(self, _widget, event):
+        if event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter, Gdk.KEY_space):
+            if self._has_detail:
+                self.revealer.set_reveal_child(not self.revealer.get_reveal_child())
+                self.expander.set_label(
+                    "▾" if self.revealer.get_reveal_child() else "▸")
+            return True
         return False
 
     # ---- durum ----
@@ -177,37 +191,12 @@ class DiagnosticCard(Gtk.Box):
         threading.Thread(target=self._run_fix, args=(fix,), daemon=True).start()
 
     def _run_fix(self, fix: Fix) -> None:
+        # NOT: pkexec BURADA KALDIRILMAZ. Bu kod normal (root olmayan)
+        # kullanıcı oturumunda çalışır; daemon.py/swarm/server.py zaten
+        # root olarak çalıştığı için orada pkexec'in kaldırılması doğrudur,
+        # ama burada kaldırmak "Düzelt" butonunu yetkisiz/başarısız hale
+        # getirir (bkz. TECHNICAL_AUDIT.md Kol 2, madde 3).
         try:
-            import shlex
-            cmd = fix.resolved_command()
-            cmd_list = shlex.split(cmd)
-            
-            # pkexec güvenle kaldırılıyor (daemon.py ile tutarlı)
-            if cmd_list and cmd_list[0] == "pkexec":
-                cmd_list = cmd_list[1:]
-            
-            if not cmd_list:
-                GLib.idle_add(self.log_callback, "Hata: Boş komut\n")
-                return
-            
-            proc = subprocess.Popen(
-                cmd_list,
-                shell=False,  # Command Injection koruması - shell=True YASAK
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
-            assert proc.stdout is not None
-            for line in iter(proc.stdout.readline, ""):
-                if line:
-                    GLib.idle_add(self.log_callback, line.rstrip())
-            proc.stdout.close()
-            proc.wait()
-            GLib.idle_add(
-                self.log_callback,
-                f"İşlem tamamlandı (çıkış kodu: {proc.returncode})\n",
-            )
-        except Exception as exc:
-            GLib.idle_add(self.log_callback, f"Hata: {exc}\n")
+            run_fix_command(fix.resolved_command(), self.log_callback)
         finally:
             GLib.idle_add(self.recheck_callback, self.check_id)

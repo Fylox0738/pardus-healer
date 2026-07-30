@@ -6,6 +6,7 @@ Tıklanınca ana pencereyi açar.
 
 from __future__ import annotations
 
+import os
 import threading
 import gi
 
@@ -17,13 +18,26 @@ from pardus_healer.core.engine import DiagnosisEngine
 from pardus_healer.core.models import Status
 from pardus_healer.ui.main_entry import launch
 
+# Görev çubuğu jenerik sistem ikonları (security-high/medium/low) kullanıyordu
+# — marka taşımıyordu (bkz. TECHNICAL_AUDIT.md). Artık gerçek Healer ikonu
+# kullanılıyor; durum, ikon yerine menü metninde iletiliyor.
+_ASSETS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "assets",
+)
+if not os.path.isdir(_ASSETS_DIR):
+    _ASSETS_DIR = "/usr/share/pardus-suite/assets"
+
 class HealerTray:
     def __init__(self):
         self.indicator = AppIndicator3.Indicator.new(
             "pardus-healer-tray",
-            "security-high", # Varsayılan ikon
+            "healer",
             AppIndicator3.IndicatorCategory.SYSTEM_SERVICES
         )
+        if os.path.isdir(_ASSETS_DIR):
+            self.indicator.set_icon_theme_path(_ASSETS_DIR)
+        self.indicator.set_icon_full("healer", "Pardus Healer")
         self.indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
         
         self.menu = Gtk.Menu()
@@ -73,14 +87,12 @@ class HealerTray:
         GLib.idle_add(self._update_ui, report)
 
     def _update_ui(self, report):
+        self.indicator.set_icon_full("healer", f"Pardus Healer — Skor {report.health_score}")
         if report.health_score >= 80:
-            self.indicator.set_icon_full("security-high", "Sistem Sağlıklı")
             self.status_item.set_label(f"Durum: Sağlıklı (Skor: {report.health_score})")
         elif report.health_score >= 50:
-            self.indicator.set_icon_full("security-medium", "Sistem Uyarısı")
             self.status_item.set_label(f"Durum: Uyarılar Var (Skor: {report.health_score})")
         else:
-            self.indicator.set_icon_full("security-low", "Kritik Durum")
             self.status_item.set_label(f"Durum: Kritik Arızalar! (Skor: {report.health_score})")
 
 def run_tray():

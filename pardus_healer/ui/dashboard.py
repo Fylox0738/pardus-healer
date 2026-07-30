@@ -10,12 +10,11 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa: E402
 
 from ..core.models import DiagnosisReport, Fix, Insight, Status
+from . import theme
 from .widgets import HealthGauge, LiveMeter, TrendChart
 
-_GRADE_HEX = {
-    "A": "#22c55e", "B": "#84cc16", "C": "#eab308",
-    "D": "#f97316", "F": "#ef4444",
-}
+# Tek kaynak theme.py'de — bkz. TECHNICAL_AUDIT.md.
+_GRADE_HEX = theme.GRADE_HEX
 
 
 class Dashboard(Gtk.Box):

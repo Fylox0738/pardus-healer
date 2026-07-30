@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import threading
 
@@ -24,6 +25,7 @@ from ..core.models import CheckResult, DiagnosisReport, Fix
 from ..report.html_report import save_html_report
 from . import theme
 from .checks_page import ChecksPage
+from .fix_runner import run_fix_command
 from .dashboard import Dashboard
 from .settings_page import SettingsPage
 from .sos_dialog import SosDialog
@@ -37,6 +39,7 @@ class HealerApp(Gtk.Window):
         self.set_default_size(1200, 820)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.maximize()
+        self._load_window_icon()
 
         self.config = Config()
         self.engine = DiagnosisEngine()
@@ -131,6 +134,29 @@ class HealerApp(Gtk.Window):
             Gdk.Screen.get_default(), self.css_provider,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
+
+    def _load_window_icon(self):
+        """Görev çubuğu/Alt-Tab/pencere değiştiricide gösterilecek ikon.
+
+        Bu olmadan pencere jenerik bir GTK/Python ikonuyla görünür — bkz.
+        TECHNICAL_AUDIT.md Kol 3 (marka tutarlılığı, en görünür bulgu).
+        Hem geliştirme ağacından hem kurulu (/usr/share) konumdan dener.
+        """
+        candidates = [
+            os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(
+                    os.path.abspath(__file__)))),
+                "assets", "healer.svg",
+            ),
+            "/usr/share/pardus-suite/assets/healer.svg",
+        ]
+        for path in candidates:
+            if os.path.exists(path):
+                try:
+                    self.set_icon_from_file(path)
+                except GLib.Error:
+                    continue
+                return
 
     # ───────── kenar çubuğu ─────────
     def _build_sidebar(self):
@@ -374,7 +400,6 @@ class HealerApp(Gtk.Window):
             ctx.add_class("sidebar-btn-active" if name == page else "sidebar-btn")
 
     def _fix_worker(self, fix: Fix):
-        import shlex
         import shutil
         try:
             if shutil.which("timeshift"):
@@ -383,26 +408,7 @@ class HealerApp(Gtk.Window):
                     ["pkexec", "timeshift", "--create", "--comments", "Pardus Healer Pre-Fix"],
                     shell=False, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                 )
-            
-            cmd = fix.resolved_command()
-            cmd_list = shlex.split(cmd)
-            
-            proc = subprocess.Popen(
-                cmd_list, shell=False,
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-            )
-            assert proc.stdout is not None
-            for line in iter(proc.stdout.readline, ""):
-                if line:
-                    GLib.idle_add(self.checks_page.log, line.rstrip())
-            proc.stdout.close()
-            proc.wait()
-            GLib.idle_add(
-                self.checks_page.log,
-                f"İşlem tamamlandı (çıkış kodu: {proc.returncode})\n",
-            )
-        except Exception as exc:
-            GLib.idle_add(self.checks_page.log, f"Hata: {exc}\n")
+            run_fix_command(fix.resolved_command(), self.checks_page.log)
         finally:
             GLib.idle_add(self.refresh_all)
 
@@ -450,40 +456,31 @@ class HealerApp(Gtk.Window):
         ).start()
 
     def _fix_all_worker(self, pending):
-        import shlex
         import shutil
-        
+
         if shutil.which("timeshift"):
             GLib.idle_add(self.checks_page.log, "Toplu onarım öncesi güvenlik yedeği alınıyor (Timeshift)...")
             subprocess.run(
                 ["pkexec", "timeshift", "--create", "--comments", "Pardus Healer Pre-Fix"],
                 shell=False, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
-            
+
         for idx, (title, fix) in enumerate(pending, start=1):
             cmd = fix.resolved_command()
-            cmd_list = shlex.split(cmd)
             GLib.idle_add(
                 self.checks_page.log,
-                f"\n──▶ [{idx}/{len(pending)}] {title}: {cmd_list}",
+                f"\n──▶ [{idx}/{len(pending)}] {title}: {cmd}",
             )
-            try:
-                proc = subprocess.Popen(
-                    cmd_list, shell=False,
-                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                )
-                assert proc.stdout is not None
-                for line in iter(proc.stdout.readline, ""):
-                    if line:
-                        GLib.idle_add(self.checks_page.log, line.rstrip())
-                proc.stdout.close()
-                proc.wait()
-                GLib.idle_add(
-                    self.checks_page.log,
-                    f"   ✓ Adım {idx} tamamlandı (çıkış kodu: {proc.returncode})",
-                )
-            except Exception as exc:
-                GLib.idle_add(self.checks_page.log, f"   ✗ Hata: {exc}")
+            returncode = run_fix_command(cmd, self.checks_page.log)
+            # Çıkış koduna bakılmaksızın her zaman ✓ gösteriliyordu — pkexec
+            # reddi/başarısız bir komut de "tamamlandı" gibi yanıltıcı
+            # görünüyordu (bkz. TECHNICAL_AUDIT.md). Artık gerçek sonucu
+            # yansıtıyor.
+            mark = "✓" if returncode == 0 else "✗"
+            GLib.idle_add(
+                self.checks_page.log,
+                f"   {mark} Adım {idx} tamamlandı (çıkış kodu: {returncode})",
+            )
         GLib.idle_add(self._fix_all_done)
 
     def _fix_all_done(self):

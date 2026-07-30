@@ -9,6 +9,32 @@ from __future__ import annotations
 
 ACCENT = "#00a79d"
 
+# Tek kaynak: durum ve not (grade) renkleri. widgets.py ve dashboard.py
+# eskiden bu paletleri birbirinden bağımsız olarak yeniden tanımlıyordu
+# (üçü de kaymadan aynı kalması gerekiyordu ama garanti değildi) — bkz.
+# TECHNICAL_AUDIT.md. Artık ikisi de buradan türetiyor.
+STATUS_HEX = {
+    "OK": "#22c55e",
+    "WARN": "#eab308",
+    "FAIL": "#ef4444",
+    "INFO": "#3b82f6",
+    "WAIT": "#94a3b8",
+}
+
+GRADE_HEX = {
+    "A": "#22c55e",
+    "B": "#84cc16",
+    "C": "#eab308",
+    "D": "#f97316",
+    "F": "#ef4444",
+}
+
+
+def hex_to_rgb_float(hex_color: str) -> tuple[float, float, float]:
+    """'#rrggbb' -> (r, g, b), her biri 0..1 arası (cairo çizimi için)."""
+    h = hex_color.lstrip("#")
+    return tuple(int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4))
+
 _LIGHT = {
     "BG": "#f4f6f9",
     "CARD_BG": "#ffffff",
@@ -82,11 +108,11 @@ window, .main-area { background-color: @@BG@@; }
     transition: border-color 160ms ease, background-color 160ms ease;
 }
 .card:hover { border-color: @@ACCENT@@; }
-.card-ok      { border-left: 4px solid #22c55e; }
-.card-warn    { border-left: 4px solid #eab308; }
-.card-fail    { border-left: 4px solid #ef4444; }
-.card-wait    { border-left: 4px solid #94a3b8; }
-.card-info-b  { border-left: 4px solid #3b82f6; }
+.card-ok      { border-left: 4px solid @@ST_OK@@; }
+.card-warn    { border-left: 4px solid @@ST_WARN@@; }
+.card-fail    { border-left: 4px solid @@ST_FAIL@@; }
+.card-wait    { border-left: 4px solid @@ST_WAIT@@; }
+.card-info-b  { border-left: 4px solid @@ST_INFO@@; }
 .card-title   { font-weight: 700; font-size: 12.5pt; color: @@TITLE@@; }
 .card-info    { font-size: 10.5pt; color: @@BODY@@; margin-top: 2px; }
 .card-cat {
@@ -120,10 +146,10 @@ window, .main-area { background-color: @@BG@@; }
 .insight {
     background-color: @@INSIGHT_BG@@; border: 1px solid @@CARD_BORDER@@;
     border-radius: 10px; padding: 14px 18px; margin: 5px 0px;
-    border-left: 5px solid #eab308;
+    border-left: 5px solid @@ST_WARN@@;
 }
-.insight-fail { border-left: 5px solid #ef4444; }
-.insight-warn { border-left: 5px solid #eab308; }
+.insight-fail { border-left: 5px solid @@ST_FAIL@@; }
+.insight-warn { border-left: 5px solid @@ST_WARN@@; }
 .insight-title { font-weight: 700; font-size: 12pt; color: @@TITLE@@; }
 .insight-msg   { font-size: 10.5pt; color: @@BODY@@; margin-top: 3px; }
 .insight-prio {
@@ -192,6 +218,8 @@ window, .main-area { background-color: @@BG@@; }
 
 def _build(palette: dict) -> str:
     css = _TEMPLATE.replace("@@ACCENT@@", ACCENT)
+    for key, val in STATUS_HEX.items():
+        css = css.replace(f"@@ST_{key}@@", val)
     for key, val in palette.items():
         css = css.replace(f"@@{key}@@", val)
     return css
