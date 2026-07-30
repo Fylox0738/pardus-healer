@@ -18,6 +18,29 @@ jobs:
 
       - name: CLI smoke test (tanı motoru uçtan uca)
         run: |
-          python3 run.py --cli --no-color; code=$?
-          echo "CLI çıkış kodu: $code (0=temiz, 1=uyarı var, 2=sorun bulundu — üçü de geçerli tanı sonucudur)"
-          test "$code" -le 2
+          # --cli bilinçli olarak anlamlı çıkış kodu döndürür:
+          # 0=temiz · 1=uyarı var · 2=sorun bulundu. CI runner'ında bazı
+          # kontrollerin FAIL vermesi BEKLENEN durumdur, bu bir CI hatası
+          # değildir. Çıkış kodu "|| code=$?" ile yakalanmalı — komut
+          # doğrudan bırakılırsa Actions'ın `bash -e` kabuğu adımı daha ilk
+          # satırda düşürür (kod hiç okunamaz).
+          code=0
+          python3 run.py --cli --no-color || code=$?
+          echo "CLI çıkış kodu: $code (0=temiz · 1=uyarı · 2=sorun)"
+          if [ "$code" -gt 2 ]; then
+            echo "HATA: Tanı motoru çöktü ya da beklenmeyen çıkış kodu döndü."
+            exit 1
+          fi
+
+      - name: Rapor üretimi (HTML + JSON)
+        run: |
+          code=0
+          python3 run.py --cli --quiet --html /tmp/rapor.html --json /tmp/rapor.json || code=$?
+          if [ "$code" -gt 2 ]; then
+            echo "HATA: Rapor üretimi sırasında motor çöktü (çıkış kodu: $code)."
+            exit 1
+          fi
+          test -s /tmp/rapor.html || { echo "HATA: HTML rapor üretilmedi/boş."; exit 1; }
+          test -s /tmp/rapor.json || { echo "HATA: JSON rapor üretilmedi/boş."; exit 1; }
+          python3 -c "import json; json.load(open('/tmp/rapor.json')); print('JSON rapor geçerli.')"
+          echo "HTML ve JSON raporları başarıyla üretildi."
