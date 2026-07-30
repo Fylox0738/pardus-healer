@@ -13,6 +13,14 @@ from typing import Optional
 
 from .models import CheckResult, Fix, Metric, Status
 
+# ok()/info()/unknown() bir Fix'i BİLEREK sıfırlamak ister ("fix=None"),
+# ama _make() eskiden "fix is None" ile "fix hiç verilmedi, default_fix
+# kullan" durumlarını ayırt edemiyordu — ikisi de aynı görünüyordu, bu
+# yüzden default_fix tanımlı bir kontrolde ok() çağrısı yine de eski fix'i
+# geri getiriyordu (bkz. TECHNICAL_AUDIT.md). Bu sentinel, "hiç verilmedi"
+# durumunu gerçek bir None'dan ayırt eder.
+_UNSET = object()
+
 
 class BaseCheck:
     # --- alt sınıflar bunları ezmeli ---
@@ -50,9 +58,10 @@ class BaseCheck:
         metric: Optional[Metric] = None,
         root_cause: str = "",
         recommendation: str = "",
-        fix: Optional[Fix] = None,
+        fix=_UNSET,
         tags: Optional[list[str]] = None,
     ) -> CheckResult:
+        resolved_fix = self.default_fix if fix is _UNSET else fix
         return CheckResult(
             check_id=self.id,
             title=self.title,
@@ -65,7 +74,7 @@ class BaseCheck:
             metric=metric,
             root_cause=root_cause,
             recommendation=recommendation,
-            fix=fix if fix is not None else self.default_fix,
+            fix=resolved_fix,
             tags=tags or [],
         )
 

@@ -54,6 +54,7 @@ def run_cli(argv: list[str] | None = None) -> int:
                         help="Komut satırı modunu çalıştırır (arayüzsüz).")
     parser.add_argument("--html", metavar="YOL", help="HTML rapor kaydeder.")
     parser.add_argument("--json", metavar="YOL", help="JSON rapor kaydeder.")
+    parser.add_argument("--text", metavar="YOL", help="Düz metin rapor kaydeder.")
     parser.add_argument("--quiet", action="store_true",
                         help="Yalnızca sağlık skorunu yazdırır.")
     parser.add_argument("--no-color", action="store_true",
@@ -110,6 +111,11 @@ def run_cli(argv: list[str] | None = None) -> int:
         from .report.json_report import save_json_report
         path = save_json_report(report, args.json)
         print(f"JSON rapor: {path}")
+    if args.text:
+        from .report.text_report import build_text_report
+        with open(args.text, "w", encoding="utf-8") as fh:
+            fh.write(build_text_report(report))
+        print(f"Metin rapor: {args.text}")
 
     if args.notify:
         notify.notify_report(report.fail_count, report.warn_count,

@@ -42,15 +42,19 @@ class Config:
             pass  # dosya yok veya bozuk → varsayılanlar
 
     def save(self) -> None:
+        from .core.shell import write_file_atomic
+
         path = _config_path()
         try:
             os.makedirs(os.path.dirname(path), exist_ok=True, mode=0o700)
-            with open(path, "w", encoding="utf-8") as fh:
-                json.dump(self._data, fh, indent=2)
-            # Güvenlik: Sadece sahip okuyabilsin (sensitive token içerir)
-            os.chmod(path, 0o600)
         except OSError:
             pass
+        if write_file_atomic(path, json.dumps(self._data, indent=2)):
+            try:
+                # Güvenlik: Sadece sahip okuyabilsin (sensitive token içerir)
+                os.chmod(path, 0o600)
+            except OSError:
+                pass
 
     # ---- erişimciler ----
     @property

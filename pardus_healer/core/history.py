@@ -50,13 +50,10 @@ class History:
             self.entries = []
 
     def save(self) -> None:
+        from .shell import write_file_atomic
+
         path = _history_path()
-        try:
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, "w", encoding="utf-8") as fh:
-                json.dump([asdict(e) for e in self.entries], fh, indent=2)
-        except OSError:
-            pass
+        write_file_atomic(path, json.dumps([asdict(e) for e in self.entries], indent=2))
 
     def add(self, score: int, grade: str, fail: int, warn: int, ok: int) -> None:
         entry = HistoryEntry(
