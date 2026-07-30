@@ -1,5 +1,12 @@
-pardus-suite (1.0.0-1) unstable; urgency=medium
+pardus-healer (1.0.0) unstable; urgency=medium
 
-  * Initial release. Pardus Healer ecosystem including Tray, Swarm, Daemon.
+  * İlk kararlı sürüm: 25 tanı kontrolü (yazıcı/CUPS, GRUB önyükleyici ve
+    e-İmza/e-Devlet uyumluluğu dahil), Otonom Kalkan (daemon), Filo (Swarm),
+    sistem tepsisi, Polkit entegrasyonu ve TTY kurtarma aracı (healer-rescue).
+  * Güvenlik: Polkit parolasız root yetkisi kapatıldı (auth_admin), Swarm
+    HMAC imzası uç nokta bağlamını (method+path) kapsıyor, tüm alt süreç
+    çağrıları shell=False ile argv listesi olarak yapılıyor.
+  * Kararlılık: atomik ayar/geçmiş yazımı, demo verisinin gerçek veriden
+    ayrılması, stdlib-only birim test paketi (57 test).
 
- -- Pardus Geliştiricisi <info@pardus.org.tr>  Mon, 27 Jul 2026 12:00:00 +0300
+ -- Pardus Geliştiricisi <info@pardus.org.tr>  Thu, 30 Jul 2026 12:00:00 +0300

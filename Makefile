@@ -8,7 +8,7 @@ install:
 	install -d $(DESTDIR)/opt/pardus-suite
 	install -d $(DESTDIR)/usr/share/pardus-suite/assets
 	install -d $(DESTDIR)/usr/share/applications
-	install -d $(DESTDIR)/usr/local/bin
+	install -d $(DESTDIR)/usr/bin
 	install -d $(DESTDIR)/etc/systemd/system
 	install -d $(DESTDIR)/usr/share/polkit-1/actions
 	install -d $(DESTDIR)/etc/xdg/autostart
@@ -30,7 +30,9 @@ install:
 	install -m 644 pardus-healer-tray.desktop $(DESTDIR)/etc/xdg/autostart/
 
 	# CLI Kurtarma Aracı
-	install -m 755 healer_rescue.py $(DESTDIR)/usr/local/bin/healer-rescue
+	# NOT: /usr/local/bin DEĞİL — Debian paketleri /usr/local'a dosya
+	# koyamaz (dh_usrlocal derlemeyi durdurur); /usr/bin FHS-uyumludur.
+	install -m 755 healer_rescue.py $(DESTDIR)/usr/bin/healer-rescue
 
 	# Systemd Servisleri
 	install -m 644 pardus-healer-daemon.service $(DESTDIR)/etc/systemd/system/
@@ -39,7 +41,16 @@ install:
 	# PolKit Kuralı
 	install -m 644 org.pardus.healer.policy $(DESTDIR)/usr/share/polkit-1/actions/
 
+test:
+	python3 -m compileall -q pardus_healer pardus_doctor tests healer_rescue.py run.py main.py main_doctor.py
+	python3 -m unittest discover -s tests
+
+deb:
+	dpkg-buildpackage -us -uc -b
+
 clean:
 	rm -rf __pycache__
 	rm -rf pardus_healer/__pycache__
 	rm -rf pardus_doctor/__pycache__
+
+.PHONY: all install test deb clean

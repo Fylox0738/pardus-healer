@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+# Otonom Kalkan (daemon.py) tarafından bırakılan sistem-genelinde çalışma
+# zamanı işaret dosyası — paket kaldırılınca elde kalmasın (bkz.
+# TECHNICAL_AUDIT.md). Kullanıcıya özel ayar/geçmiş dosyalarına
+# (~/.config/pardus-healer/) standart Debian paket kuralları gereği
+# dokunulmaz; bu dosyalar kullanıcı verisidir.
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+    rm -f /var/run/healer_watchdog_active
+fi
+
+#DEBHELPER#
+
+exit 0

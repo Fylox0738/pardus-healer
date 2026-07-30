@@ -1,8 +1,11 @@
 #!/bin/sh
 set -e
 
-if [ "$1" = "configure" ]; then
-    systemctl daemon-reload
+# systemctl her ortamda bulunmayabilir (ör. minimal/konteyner kurulumu) —
+# yoksa daemon-reload'ın "set -e" ile paket kurulumunu tamamen
+# başarısız kılmasını önlemek için varlığını önce kontrol ediyoruz.
+if [ "$1" = "configure" ] && command -v systemctl >/dev/null 2>&1; then
+    systemctl daemon-reload || true
     systemctl enable pardus-healer-daemon.service || true
     systemctl start pardus-healer-daemon.service || true
     systemctl enable pardus-healer-swarm.service || true
